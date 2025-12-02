@@ -1,0 +1,5 @@
+﻿{
+  "Description": "Domain ownership verification file for Microsoft 365 - place in the website root",
+  "Domain": "clcity.top",
+  "Id": "3e5e1a3d-9ba1-43f7-bcb0-2c0eb5dfaf7d"
+}
