@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Categories on 城建一局</title>
+        <link>https://tyds2013.github.io/categories/</link>
+        <description>Recent content in Categories on 城建一局</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <copyright>城建一局</copyright>
+        <lastBuildDate>Tue, 20 Jan 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://tyds2013.github.io/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>公告</title>
+        <link>https://tyds2013.github.io/categories/%E5%85%AC%E5%91%8A/</link>
+        <pubDate>Tue, 20 Jan 2026 00:00:00 +0000</pubDate>
+        
+        <guid>https://tyds2013.github.io/categories/%E5%85%AC%E5%91%8A/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>使用说明</title>
+        <link>https://tyds2013.github.io/categories/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E/</link>
+        <pubDate>Tue, 20 Jan 2026 00:00:00 +0000</pubDate>
+        
+        <guid>https://tyds2013.github.io/categories/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>更新内容</title>
+        <link>https://tyds2013.github.io/categories/%E6%9B%B4%E6%96%B0%E5%86%85%E5%AE%B9/</link>
+        <pubDate>Sat, 01 Nov 2025 00:00:00 +0000</pubDate>
+        
+        <guid>https://tyds2013.github.io/categories/%E6%9B%B4%E6%96%B0%E5%86%85%E5%AE%B9/</guid>
+        <description></description>
+        </item>
+        
+    </channel>
+</rss>
