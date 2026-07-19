@@ -5,14 +5,13 @@ async function loadArticle() {
         return;
     }
     try {
-        const res = await fetch('post/posts.json');
+        const res = await fetch('post/posts.json?' + Date.now());
         const posts = await res.json();
         const post = posts.find(p => p.id == id);
         if (!post) {
             document.getElementById('articleTitle').textContent = '文章未找到';
             return;
         }
-        // 加载 .md
         const mdRes = await fetch(`post/${post.file}`);
         const mdText = await mdRes.text();
         const html = marked.parse(mdText);
@@ -26,10 +25,11 @@ async function loadArticle() {
         document.getElementById('articleMeta').innerHTML = `
             <span>${post.date}</span>
             <span># ${post.category}</span>
+            <span>✍️ ${post.author || '博客作者'}</span>
             <span>👁️ ${views[id]} 次浏览</span>
         `;
         renderComments(id);
-    } catch (e) {
+    } catch(e) {
         console.error('加载文章失败', e);
     }
 }
@@ -39,7 +39,7 @@ function renderComments(articleId) {
     const list = comments[articleId] || [];
     const container = document.getElementById('commentList');
     if (!list.length) {
-        container.innerHTML = '<p style="color:#94a3b8;">暂无评论，来说两句吧。</p>';
+        container.innerHTML = '<p style="color:var(--text-secondary);">暂无评论，来说两句吧。</p>';
         return;
     }
     container.innerHTML = list.map(c => `

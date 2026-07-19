@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文章详情</title>
+    <title>全部文章</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -27,43 +27,49 @@
     </div>
     <nav class="top-nav">
         <a href="index.html">主页</a>
-        <a href="all-articles.html">文章</a>
+        <a href="all-articles.html" class="active">文章</a>
         <a href="about.html">关于</a>
         <a href="resources.html">资料</a>
         <a href="404.html">404 Page</a>
     </nav>
-
-    <div id="articleContainer">
-        <div class="article-title" id="articleTitle">加载中...</div>
-        <div class="post-meta" id="articleMeta"></div>
-        <div class="article-content" id="articleContent"></div>
-        <a href="index.html" class="back-link">← 返回列表</a>
+    <div class="section-header">
+        <h2>📚 全部文章</h2>
     </div>
-
-    <div class="comment-section">
-        <h4>💬 评论区</h4>
-        <div class="comment-form">
-            <input type="text" id="commentUser" placeholder="你的昵称 (首次请创建, 不可重复)">
-            <textarea id="commentText" rows="3" placeholder="写下你的想法..."></textarea>
-            <button id="submitComment">发布评论</button>
-        </div>
-        <div class="comment-list" id="commentList"></div>
-    </div>
-
-    <div style="text-align:right; margin-top:20px;">
-        <a href="admin.html" style="background:transparent; border:1px solid var(--border-color); padding:4px 18px; border-radius:30px; display:inline-block; font-size:0.8rem; color:var(--text-secondary);">🔐 后台</a>
-    </div>
-
+    <div class="post-grid" id="allPostGrid"></div>
     <div class="footer">
         © 2026 我的个人博客 · 保留所有权利
         <div class="update-date">最后更新：<span id="updateDate"></span></div>
     </div>
 </div>
 <div id="backTop">↑</div>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="js/common.js"></script>
-<script src="js/article.js"></script>
 <script>
+    async function loadAllPosts() {
+        try {
+            const res = await fetch('post/posts.json?' + Date.now());
+            const posts = await res.json();
+            const grid = document.getElementById('allPostGrid');
+            const views = JSON.parse(localStorage.getItem('views') || '{}');
+            if (!posts.length) {
+                grid.innerHTML = '<p>暂无文章</p>';
+                return;
+            }
+            grid.innerHTML = posts.map(p => `
+                <div class="post-card">
+                    <h3><a href="article.html?id=${p.id}">${p.title}</a></h3>
+                    <div class="meta">
+                        <span>📅 ${p.date}</span>
+                        <span>✍️ ${p.author || '博客作者'}</span>
+                        <span>👁️ ${views[p.id] || 0}</span>
+                    </div>
+                    <div class="excerpt">${p.excerpt}</div>
+                </div>
+            `).join('');
+        } catch(e) {
+            console.error('加载失败', e);
+        }
+    }
+    document.addEventListener('DOMContentLoaded', loadAllPosts);
     document.getElementById('updateDate').textContent = new Date().toLocaleDateString('zh-CN');
 </script>
 </body>

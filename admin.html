@@ -7,34 +7,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* 额外后台样式 */
+        /* 后台专属样式 */
         .admin-container { max-width: 1000px; margin: 0 auto; }
-        .admin-card { background: #f8fafc; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .admin-card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .admin-card h3 { margin-bottom: 12px; }
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 4px; }
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 8px 12px;
-            border: 1px solid #d1d9e6;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 0.95rem;
             font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .form-group textarea { min-height: 200px; font-family: monospace; }
         .btn { padding: 8px 20px; border: none; border-radius: 30px; cursor: pointer; font-weight: 500; transition: 0.15s; }
-        .btn-primary { background: #2563eb; color: white; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-danger { background: #e11d48; color: white; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-danger { background: #e11d48; color: #fff; }
         .btn-danger:hover { background: #be123c; }
-        .btn-secondary { background: #e2e8f0; color: #1e293b; }
-        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-secondary { background: var(--nav-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--border-color); }
         .post-item-admin {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
         }
         .post-item-admin .actions button { margin-left: 8px; }
         .modal {
@@ -48,7 +50,7 @@
         }
         .modal.open { display: flex; }
         .modal-content {
-            background: white;
+            background: var(--bg-container);
             max-width: 800px;
             width: 90%;
             max-height: 90vh;
@@ -62,61 +64,70 @@
             top: 15px; right: 20px;
             font-size: 1.8rem;
             cursor: pointer;
-            color: #94a3b8;
+            color: var(--text-secondary);
             background: none;
             border: none;
         }
-        .config-section {
-            background: #f1f5f9;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
+        .config-section { background: var(--nav-bg); padding: 16px; border-radius: 12px; margin-bottom: 20px; }
         .config-section input { width: 100%; margin-top: 4px; }
-        .status-msg { padding: 8px 16px; border-radius: 8px; margin: 10px 0; }
-        .status-msg.success { background: #dcfce7; color: #166534; }
-        .status-msg.error { background: #fee2e2; color: #991b1b; }
-        #previewArea {
-            border: 1px solid #d1d9e6;
-            border-radius: 8px;
-            padding: 12px;
-            background: white;
-            margin-top: 8px;
-            min-height: 100px;
-        }
-
+        .status-msg { padding: 8px 16px; border-radius: 8px; margin: 10px 0; display: none; }
+        .status-msg.success { background: #dcfce7; color: #166534; display: block; }
+        .status-msg.error { background: #fee2e2; color: #991b1b; display: block; }
         .editor-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        margin-bottom: 10px;
-        }   
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
         .editor-toolbar button {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 6px;
-        color: #cbd5e1;
-        padding: 4px 10px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-family: 'Inter', sans-serif;
-        transition: all 0.2s;
+            background: var(--nav-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
         }
         .editor-toolbar button:hover {
-        background: rgba(74, 222, 128, 0.12);
-        color: #4ade80;
-        border-color: rgba(74, 222, 128, 0.2);
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        #previewArea {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            background: var(--input-bg);
+            margin-top: 8px;
+            min-height: 100px;
         }
     </style>
 </head>
 <body>
+<div id="loader">
+    <svg class="pl" width="240" height="240" viewBox="0 0 240 240">
+        <circle class="pl__ring pl__ring--a" cx="120" cy="120" r="105" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 660" stroke-dashoffset="-330" stroke-linecap="round"></circle>
+        <circle class="pl__ring pl__ring--b" cx="120" cy="120" r="35" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 220" stroke-dashoffset="-110" stroke-linecap="round"></circle>
+        <circle class="pl__ring pl__ring--c" cx="85" cy="120" r="70" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"></circle>
+        <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"></circle>
+    </svg>
+</div>
+
 <div class="container admin-container">
-    <div class="hero-image"><span>🔐 后台管理</span></div>
+    <div class="top-bar">
+        <div id="clock"></div>
+        <div class="theme-toggle" id="themeToggle">
+            <button data-theme="light">☀️ 亮</button>
+            <button data-theme="dark">🌙 暗</button>
+        </div>
+    </div>
     <nav class="top-nav">
         <a href="index.html">主页</a>
-        <a href="article.html?id=1">文章</a>
+        <a href="all-articles.html">文章</a>
         <a href="about.html">关于</a>
         <a href="resources.html">资料</a>
         <a href="404.html">404 Page</a>
@@ -134,28 +145,28 @@
             <input type="password" id="adminPass" value="123456">
         </div>
         <button class="btn btn-primary" onclick="adminLogin()">登录</button>
-        <div id="loginMsg" class="status-msg" style="display:none;"></div>
+        <div id="loginMsg" class="status-msg"></div>
     </div>
 
-    <!-- 后台主面板（登录后显示） -->
+    <!-- 后台主面板 -->
     <div id="dashboard" style="display:none;">
         <!-- GitHub 配置 -->
         <div class="admin-card config-section">
-            <h3>⚙️ GitHub 配置（首次使用需设置）</h3>
+            <h3>⚙️ GitHub 配置</h3>
             <div class="form-group">
-                <label>GitHub Token (需要有 repo 权限)</label>
+                <label>GitHub Token (repo 权限)</label>
                 <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
             </div>
             <div class="form-group">
-                <label>仓库所有者/仓库名 (例如: yourname/blog)</label>
+                <label>仓库 (owner/repo)</label>
                 <input type="text" id="repoInfo" placeholder="owner/repo">
             </div>
             <div class="form-group">
-                <label>分支 (默认 main)</label>
+                <label>分支</label>
                 <input type="text" id="repoBranch" value="main">
             </div>
             <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
-            <div id="configMsg" class="status-msg" style="display:none;"></div>
+            <div id="configMsg" class="status-msg"></div>
         </div>
 
         <!-- 数据概览 -->
@@ -165,7 +176,7 @@
             <p><strong>文章总数：</strong> <span id="postCount">0</span></p>
         </div>
 
-        <!-- 评论列表 -->
+        <!-- 评论 -->
         <div class="admin-card">
             <h3>💬 评论列表</h3>
             <div id="adminComments"><p>暂无评论</p></div>
@@ -178,10 +189,14 @@
                 <button class="btn btn-primary" onclick="openEditor()">+ 新建文章</button>
             </div>
             <div id="adminPostList"></div>
+            <button onclick="logoutAdmin()" style="margin-top:20px; background:#e11d48; color:#fff; border:none; padding:6px 24px; border-radius:40px; cursor:pointer;">退出</button>
         </div>
     </div>
 
-    <div class="footer">© 2026 我的个人博客 · 保留所有权利</div>
+    <div class="footer">
+        © 2026 我的个人博客 · 保留所有权利
+        <div class="update-date">最后更新：<span id="updateDate"></span></div>
+    </div>
 </div>
 
 <!-- 文章编辑器模态框 -->
@@ -235,12 +250,16 @@
             <button class="btn btn-secondary" onclick="closeEditor()">取消</button>
             <button class="btn btn-primary" id="savePostBtn" onclick="savePost()">保存并提交到 GitHub</button>
         </div>
-        <div id="editorMsg" class="status-msg" style="display:none;"></div>
+        <div id="editorMsg" class="status-msg"></div>
     </div>
 </div>
 
+<div id="backTop">↑</div>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="js/common.js"></script>
 <script src="js/admin.js"></script>
+<script>
+    document.getElementById('updateDate').textContent = new Date().toLocaleDateString('zh-CN');
+</script>
 </body>
 </html>
