@@ -1,9 +1,9 @@
 // =============================================
-// 公共功能：时间更新、主题切换、轮播、返回顶部、加载动画隐藏
+// 公共功能：时间、主题、轮播、返回顶部、导航高亮 + 登录状态
 // =============================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // ---------- 实时时钟 ----------
+    // ----- 1. 实时时钟 -----
     function updateClock() {
         const now = new Date();
         const year = now.getFullYear();
@@ -14,15 +14,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
-        const clock = document.getElementById('clock');
-        if (clock) {
-            clock.textContent = `${year}-${month}-${day}  星期${wd}  ${hours}:${minutes}:${seconds}`;
+        const clockEl = document.getElementById('clock');
+        if (clockEl) {
+            clockEl.textContent = `${year}-${month}-${day}  星期${wd}  ${hours}:${minutes}:${seconds}`;
         }
     }
     updateClock();
     setInterval(updateClock, 1000);
 
-    // ---------- 亮/暗色主题 ----------
+    // ----- 2. 亮/暗主题 -----
     const themeToggle = document.getElementById('themeToggle');
     const themeButtons = themeToggle ? themeToggle.querySelectorAll('button') : [];
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -36,42 +36,30 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.toggle('active', btn.dataset.theme === theme);
         });
     }
-
     themeButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             applyTheme(this.dataset.theme);
         });
     });
-
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         if (!localStorage.getItem('theme')) {
             applyTheme(e.matches ? 'dark' : 'light');
         }
     });
 
-    // ---------- 轮播图 ----------
+    // ----- 3. 轮播图 -----
     const slides = document.querySelectorAll('.carousel-slide');
     const dots = document.querySelectorAll('.carousel-dots span');
     let currentSlide = 0;
     let intervalId = null;
-
-    function showSlide(index) {
-        slides.forEach((s, i) => s.classList.toggle('active', i === index));
-        dots.forEach((d, i) => d.classList.toggle('active', i === index));
-        currentSlide = index;
-    }
-
-    function nextSlide() {
-        const next = (currentSlide + 1) % slides.length;
-        showSlide(next);
-    }
-
-    function prevSlide() {
-        const prev = (currentSlide - 1 + slides.length) % slides.length;
-        showSlide(prev);
-    }
-
     if (slides.length > 0) {
+        function showSlide(index) {
+            slides.forEach((s, i) => s.classList.toggle('active', i === index));
+            dots.forEach((d, i) => d.classList.toggle('active', i === index));
+            currentSlide = index;
+        }
+        function nextSlide() { showSlide((currentSlide + 1) % slides.length); }
+        function prevSlide() { showSlide((currentSlide - 1 + slides.length) % slides.length); }
         intervalId = setInterval(nextSlide, 5000);
         dots.forEach((dot, i) => {
             dot.addEventListener('click', () => {
@@ -80,25 +68,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 intervalId = setInterval(nextSlide, 5000);
             });
         });
-        const leftArrow = document.querySelector('.carousel-arrow.left');
-        const rightArrow = document.querySelector('.carousel-arrow.right');
-        if (leftArrow) {
-            leftArrow.addEventListener('click', () => {
-                clearInterval(intervalId);
-                prevSlide();
-                intervalId = setInterval(nextSlide, 5000);
-            });
-        }
-        if (rightArrow) {
-            rightArrow.addEventListener('click', () => {
-                clearInterval(intervalId);
-                nextSlide();
-                intervalId = setInterval(nextSlide, 5000);
-            });
-        }
+        document.querySelector('.carousel-arrow.left')?.addEventListener('click', () => {
+            clearInterval(intervalId);
+            prevSlide();
+            intervalId = setInterval(nextSlide, 5000);
+        });
+        document.querySelector('.carousel-arrow.right')?.addEventListener('click', () => {
+            clearInterval(intervalId);
+            nextSlide();
+            intervalId = setInterval(nextSlide, 5000);
+        });
     }
 
-    // ---------- 返回顶部 ----------
+    // ----- 4. 返回顶部 -----
     const backTop = document.getElementById('backTop');
     if (backTop) {
         window.addEventListener('scroll', () => {
@@ -107,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
         backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }
 
-    // ---------- 导航高亮 ----------
+    // ----- 5. 导航高亮 -----
     const navLinks = document.querySelectorAll('.top-nav a');
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
     navLinks.forEach(link => {
@@ -116,16 +98,69 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
+
+    // ----- 6. 登录状态 UI 更新 -----
+    updateLoginUI();
 });
 
-// ===== 加载动画控制 =====
-window.addEventListener('load', function() {
-    const loader = document.getElementById('loader');
-    if (loader) {
-        setTimeout(() => { loader.classList.add('hidden'); }, 300);
-    }
-});
-if (document.readyState === 'complete') {
-    const loader = document.getElementById('loader');
-    if (loader) loader.classList.add('hidden');
+// =============================================
+// 用户管理工具（与后台共用 localStorage）
+// =============================================
+
+// 获取所有用户
+function getUsers() {
+    const data = localStorage.getItem('users');
+    return data ? JSON.parse(data) : {};
 }
+
+// 保存用户
+function saveUsers(users) {
+    localStorage.setItem('users', JSON.stringify(users));
+}
+
+// SHA-256 哈希（用于密码验证）
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// =============================================
+// 导航栏登录状态显示（更新 #loginNav）
+// =============================================
+
+function updateLoginUI() {
+    const loginNav = document.getElementById('loginNav');
+    if (!loginNav) return;
+
+    const user = sessionStorage.getItem('loginUser');
+    if (user) {
+        // 已登录：显示用户名 + 退出按钮
+        loginNav.innerHTML = `
+            <span style="color:var(--text-secondary); margin-right:12px;">👤 ${user}</span>
+            <button onclick="logoutUser()" style="background:transparent; border:1px solid var(--border-color); border-radius:30px; padding:4px 14px; cursor:pointer; color:var(--text-secondary);">退出</button>
+        `;
+    } else {
+        // 未登录：显示登录链接（跳转到 login.html，并携带当前页面作为重定向参数）
+        const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+        loginNav.innerHTML = `
+            <a href="login.html?redirect=${encodeURIComponent(currentPath)}" style="background:var(--accent); border:none; border-radius:30px; padding:4px 18px; cursor:pointer; color:#fff; font-weight:500; text-decoration:none;">登录</a>
+        `;
+    }
+}
+
+// 退出登录
+function logoutUser() {
+    sessionStorage.removeItem('loginUser');
+    sessionStorage.removeItem('isAdmin');
+    updateLoginUI();
+    // 可选：刷新页面以更新所有组件状态
+    location.reload();
+}
+
+// 初始化默认管理员（仅在后台 admin.js 中使用，但为保证函数存在，这里也定义）
+// 但此函数在 common.js 中并非必须，可保留为占位，实际上 admin.js 已独立初始化。
+// 如果需要，可保留空函数或由 admin.js 自行处理。
+// 为减少冗余，此处不再重复 initDefaultUser。

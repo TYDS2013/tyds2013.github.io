@@ -1,12 +1,102 @@
 // =============================================
-// 后台管理逻辑
+// 后台管理逻辑 (完整版)
 // =============================================
 
-const ADMIN_CRED = { user: 'admin', pass: '123456' };
+// ----- 哈希工具 (SHA-256) -----
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ----- 用户管理 (localStorage) -----
+function getUsers() {
+    const data = localStorage.getItem('users');
+    return data ? JSON.parse(data) : {};
+}
+
+function saveUsers(users) {
+    localStorage.setItem('users', JSON.stringify(users));
+}
+
+// 初始化默认管理员 (仅当无任何用户时创建)
+async function initDefaultUser() {
+    const users = getUsers();
+    if (Object.keys(users).length === 0) {
+        const hashed = await hashPassword('XZC520czq');
+        users.TYDS2013 = { hash: hashed, created: Date.now() };
+        saveUsers(users);
+        console.log('默认管理员已创建: TYDS2013 / XZC520czq');
+    }
+}
+
+// 登录成功后渲染用户列表
+function renderUserList() {
+    const users = getUsers();
+    const container = document.getElementById('userList');
+    if (!container) return;
+    if (Object.keys(users).length === 0) {
+        container.innerHTML = '<p>暂无用户</p>';
+        return;
+    }
+    container.innerHTML = Object.entries(users).map(([username, data]) => `
+        <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color);">
+            <span><strong>${username}</strong> (创建于 ${new Date(data.created).toLocaleDateString()})</span>
+            ${username !== 'TYDS2013' ? `<button class="btn btn-danger" onclick="deleteUser('${username}')" style="padding:2px 12px; font-size:0.8rem;">删除</button>` : '<span style="color:var(--text-secondary);font-size:0.8rem;">默认管理员</span>'}
+        </div>
+    `).join('');
+}
+
+// 添加用户 (仅管理员)
+async function addUser() {
+    const username = document.getElementById('newUsername').value.trim();
+    const password = document.getElementById('newPassword').value.trim();
+    if (!username || !password) {
+        showMsg('userMsg', '请填写用户名和密码', 'error');
+        return;
+    }
+    if (username.length < 3) {
+        showMsg('userMsg', '用户名至少3个字符', 'error');
+        return;
+    }
+    if (password.length < 6) {
+        showMsg('userMsg', '密码至少6个字符', 'error');
+        return;
+    }
+    const users = getUsers();
+    if (users[username]) {
+        showMsg('userMsg', '用户名已存在', 'error');
+        return;
+    }
+    const hashed = await hashPassword(password);
+    users[username] = { hash: hashed, created: Date.now() };
+    saveUsers(users);
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    renderUserList();
+    showMsg('userMsg', '用户添加成功', 'success');
+}
+
+// 删除用户 (仅管理员, 不能删除默认管理员 TYDS2013)
+function deleteUser(username) {
+    if (username === 'TYDS2013') {
+        showMsg('userMsg', '不能删除默认管理员', 'error');
+        return;
+    }
+    if (!confirm(`确定要删除用户 "${username}" 吗？`)) return;
+    const users = getUsers();
+    delete users[username];
+    saveUsers(users);
+    renderUserList();
+    showMsg('userMsg', '用户已删除', 'success');
+}
+
+// ----- GitHub 配置 -----
 let githubConfig = { token: '', repo: '', branch: 'main' };
 let postsData = [];
 
-// ----- 配置加载 -----
 function loadConfig() {
     const saved = localStorage.getItem('githubConfig');
     if (saved) {
@@ -34,8 +124,10 @@ function saveConfig() {
     showMsg('configMsg', '配置已保存', 'success');
 }
 
+// ----- 消息提示 -----
 function showMsg(elementId, text, type) {
     const el = document.getElementById(elementId);
+    if (!el) return;
     el.textContent = text;
     el.className = 'status-msg ' + type;
     el.style.display = 'block';
@@ -43,17 +135,28 @@ function showMsg(elementId, text, type) {
 }
 
 // ----- 登录/退出 -----
-function adminLogin() {
-    const user = document.getElementById('adminUser').value;
-    const pass = document.getElementById('adminPass').value;
-    if (user === ADMIN_CRED.user && pass === ADMIN_CRED.pass) {
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if (!username || !password) {
+        showMsg('loginMsg', '请填写用户名和密码', 'error');
+        return;
+    }
+    const users = getUsers();
+    if (!users[username]) {
+        showMsg('loginMsg', '用户不存在', 'error');
+        return;
+    }
+    const hashedInput = await hashPassword(password);
+    if (users[username].hash === hashedInput) {
         sessionStorage.setItem('adminLogged', 'true');
         document.getElementById('loginArea').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         loadConfig();
+        renderUserList();
         updateDashboard();
     } else {
-        showMsg('loginMsg', '账户或密码错误', 'error');
+        showMsg('loginMsg', '密码错误', 'error');
     }
 }
 
@@ -114,7 +217,7 @@ function renderPostList() {
     `).join('');
 }
 
-// ----- 编辑器（新建/编辑）-----
+// ----- 编辑器 -----
 function openEditor(id) {
     const modal = document.getElementById('editorModal');
     modal.classList.add('open');
@@ -156,8 +259,6 @@ function closeEditor() {
     document.getElementById('editorModal').classList.remove('open');
 }
 
-// 预览
-document.getElementById('editContent').addEventListener('input', updatePreview);
 function updatePreview() {
     const content = document.getElementById('editContent').value;
     try {
@@ -167,7 +268,12 @@ function updatePreview() {
     }
 }
 
-// ----- 保存文章（GitHub API）-----
+// 监听编辑器内容变化（若未自动绑定）
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'editContent') updatePreview();
+});
+
+// ----- 保存文章 (GitHub API) -----
 async function savePost() {
     const btn = document.getElementById('savePostBtn');
     btn.disabled = true;
@@ -211,7 +317,7 @@ async function savePost() {
         excerpt: excerpt || '',
         tags: tags.length ? tags : ['未分类'],
         file,
-        author: '博客作者' // 可扩展为表单字段
+        author: '博客作者'
     };
 
     let postsJsonContent = null;
@@ -324,7 +430,6 @@ function insertMarkdown(prefix, suffix, wrapLine = false) {
     const after = textarea.value.substring(end);
     let insertText = '';
     if (wrapLine) {
-        // 简单行首插入，不做复杂处理
         insertText = prefix + selected + suffix;
     } else {
         insertText = selected ? prefix + selected + suffix : prefix + suffix;
@@ -356,19 +461,41 @@ document.addEventListener('keydown', function(e) {
     if (ctrl && shift && e.key === 'q') { e.preventDefault(); insertMarkdown('> ', '', true); return; }
 });
 
-// ----- 初始化登录状态 -----
-document.addEventListener('DOMContentLoaded', function() {
+// ----- 登录状态初始化 -----
+document.addEventListener('DOMContentLoaded', async function() {
+    // 初始化默认管理员（仅当无用户时）
+    await initDefaultUser();
+
+    // 登录/注册 tab 切换（仅保留登录，但保留注册表单已移除，此处只处理登录）
+    const tabs = document.querySelectorAll('.auth-tabs button');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            const formId = this.dataset.tab === 'login' ? 'loginForm' : 'registerForm';
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            const form = document.getElementById(formId);
+            if (form) form.classList.add('active');
+            document.getElementById('loginMsg').style.display = 'none';
+            document.getElementById('regMsg').style.display = 'none';
+        });
+    });
+
+    // 检查登录状态
     if (sessionStorage.getItem('adminLogged') === 'true') {
         document.getElementById('loginArea').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         loadConfig();
+        renderUserList();
         updateDashboard();
     }
 });
 
 // 暴露全局函数
-window.adminLogin = adminLogin;
+window.handleLogin = handleLogin;
 window.logoutAdmin = logoutAdmin;
+window.addUser = addUser;
+window.deleteUser = deleteUser;
 window.openEditor = openEditor;
 window.closeEditor = closeEditor;
 window.savePost = savePost;
