@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人博客</title>
+    <title>城建一局</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -37,23 +37,26 @@
 
     <!-- 轮播图 -->
     <div class="carousel" id="carousel">
-        <div class="carousel-slide active">
-            <img src="https://picsum.photos/1400/400?random=1" alt="轮播图1">
-        </div>
-        <div class="carousel-slide">
-            <img src="https://picsum.photos/1400/400?random=2" alt="轮播图2">
-        </div>
-        <div class="carousel-slide">
-            <img src="https://picsum.photos/1400/400?random=3" alt="轮播图3">
-        </div>
-        <button class="carousel-arrow left" onclick="document.querySelector('.carousel-arrow.left')?.click()">‹</button>
-        <button class="carousel-arrow right" onclick="document.querySelector('.carousel-arrow.right')?.click()">›</button>
-        <div class="carousel-dots">
-            <span class="active"></span>
-            <span></span>
-            <span></span>
-        </div>
+    <div class="carousel-slide active">
+        <img src="https://i.postimg.cc/FRw8RdWD/lun-bo-tu1.png" alt="轮播图1">
+        <div class="carousel-caption">双手提笔江山 方块铸造未来</div>
     </div>
+    <div class="carousel-slide">
+        <img src="https://i.postimg.cc/8zrFJqzt/lun-bo-tu3.png" alt="轮播图2">
+        <div class="carousel-caption">翠林城项目</div>
+    </div>
+    <div class="carousel-slide">
+        <img src="https://i.postimg.cc/gcqHrLTX/lun-bo-tu2.png" alt="轮播图3">
+        <div class="carousel-caption">🌆 城建一局 · 与城市共成长</div>
+    </div>
+    <button class="carousel-arrow left" onclick="prevSlide()">‹</button>
+    <button class="carousel-arrow right" onclick="nextSlide()">›</button>
+    <div class="carousel-dots">
+        <span class="active"></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
 
     <!-- 最新文章 -->
     <div class="section-header">
@@ -67,8 +70,8 @@
         <h2>🎬 推荐视频</h2>
     </div>
     <div class="video-grid">
-        <iframe src="https://player.bilibili.com/player.html?bvid=BV1GJ411x7M6&page=1" allowfullscreen></iframe>
-        <iframe src="https://player.bilibili.com/player.html?bvid=BV1Qy4y1Q7Tj&page=1" allowfullscreen></iframe>
+        <iframe src="https://player.bilibili.com/player.html?bvid=BV1NLASzME3K" allowfullscreen></iframe>
+        <iframe src="https://player.bilibili.com/player.html?bvid=BV1oNvAzuE8K" allowfullscreen></iframe>
     </div>
 
 

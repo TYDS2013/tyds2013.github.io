@@ -167,33 +167,29 @@ function deleteUser(username) {
     showMsg('userMsg', '用户已删除', 'success');
 }
 
-// ----- 仪表盘更新（文章、评论、浏览数）-----
+// ----- 仪表盘更新（最近3篇文章 + 文章管理）-----
 async function updateDashboard() {
     try {
         const res = await fetch('post/posts.json?' + Date.now());
         postsData = await res.json();
         const views = JSON.parse(localStorage.getItem('views') || '{}');
-        let totalViews = 0;
-        for (let k in views) totalViews += views[k];
-        document.getElementById('viewCount').textContent = totalViews;
-        document.getElementById('postCount').textContent = postsData.length;
 
-        const comments = JSON.parse(localStorage.getItem('comments') || '{}');
-        let allComments = [];
-        for (let k in comments) {
-            comments[k].forEach(c => allComments.push({ ...c, articleId: k }));
-        }
-        const container = document.getElementById('adminComments');
-        if (!allComments.length) {
-            container.innerHTML = '<p>暂无评论</p>';
+        // ---- 数据概览：最近3篇文章 ----
+        const sorted = [...postsData].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recent = sorted.slice(0, 3);
+        const container = document.getElementById('recentPosts');
+        if (!recent.length) {
+            container.innerHTML = '<p>暂无文章</p>';
         } else {
-            container.innerHTML = allComments.map(c => `
-                <div style="border-bottom:1px solid var(--border-color); padding:6px 0;">
-                    <strong>${c.user}</strong> (文章 ${c.articleId})：${c.text}
-                    <span style="color:var(--text-secondary);font-size:0.8rem;">${c.time}</span>
+            container.innerHTML = recent.map(p => `
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color);">
+                    <span><strong>${p.title}</strong> (${p.date})</span>
+                    <span>👁️ ${views[p.id] || 0} 次浏览</span>
                 </div>
             `).join('');
         }
+
+        // ---- 文章管理列表 ----
         renderPostList();
     } catch(e) {
         console.error('更新仪表盘失败', e);
@@ -211,144 +207,89 @@ function renderPostList() {
         <div class="post-item-admin">
             <span><strong>${p.title}</strong> (${p.date})</span>
             <div class="actions">
-                <button class="btn btn-secondary" onclick="openEditor(${p.id})">编辑</button>
+                <a href="editor.html?id=${p.id}" class="btn btn-secondary" style="display:inline-block; padding:2px 14px; border-radius:30px; text-decoration:none;">编辑</a>
                 <button class="btn btn-danger" onclick="deletePost(${p.id})">删除</button>
             </div>
         </div>
     `).join('');
 }
 
-// ----- 文章编辑器（完整实现）-----
-function openEditor(id) {
-    const modal = document.getElementById('editorModal');
-    modal.classList.add('open');
-    document.getElementById('editorMsg').style.display = 'none';
-    if (id) {
-        const post = postsData.find(p => p.id === id);
-        if (!post) return;
-        document.getElementById('editorTitle').textContent = '编辑文章';
-        document.getElementById('editId').value = id;
-        document.getElementById('editTitle').value = post.title;
-        document.getElementById('editDate').value = post.date;
-        document.getElementById('editCategory').value = post.category;
-        document.getElementById('editTags').value = post.tags.join(', ');
-        document.getElementById('editExcerpt').value = post.excerpt;
-        fetch(`post/${post.file}`)
-            .then(res => res.text())
-            .then(md => {
-                document.getElementById('editContent').value = md;
-                updatePreview();
-            })
-            .catch(() => {
-                document.getElementById('editContent').value = '# 加载失败';
-                updatePreview();
-            });
-    } else {
-        document.getElementById('editorTitle').textContent = '新建文章';
-        document.getElementById('editId').value = '';
-        document.getElementById('editTitle').value = '';
-        document.getElementById('editDate').value = new Date().toISOString().slice(0,10);
-        document.getElementById('editCategory').value = '';
-        document.getElementById('editTags').value = '';
-        document.getElementById('editExcerpt').value = '';
-        document.getElementById('editContent').value = '# 新文章\n\n开始书写...';
-        updatePreview();
-    }
-}
+// ----- 新建文章（跳转编辑器）-----
+async function createAndEdit() {
+    const title = document.getElementById('newTitle').value.trim();
+    const date = document.getElementById('newDate').value.trim() || new Date().toISOString().slice(0,10);
+    const category = document.getElementById('newCategory').value;
 
-function closeEditor() {
-    document.getElementById('editorModal').classList.remove('open');
-}
-
-function updatePreview() {
-    const content = document.getElementById('editContent').value;
-    try {
-        document.getElementById('previewArea').innerHTML = marked.parse(content);
-    } catch(e) {
-        document.getElementById('previewArea').innerHTML = '<span style="color:red;">Markdown 解析错误</span>';
-    }
-}
-
-// 监听编辑器内容变化
-document.addEventListener('input', function(e) {
-    if (e.target && e.target.id === 'editContent') updatePreview();
-});
-
-// ----- 保存文章（GitHub API）-----
-async function savePost() {
-    const btn = document.getElementById('savePostBtn');
-    btn.disabled = true;
-    btn.textContent = '提交中...';
-    document.getElementById('editorMsg').style.display = 'none';
-
-    const id = document.getElementById('editId').value.trim();
-    const title = document.getElementById('editTitle').value.trim();
-    const date = document.getElementById('editDate').value.trim();
-    const category = document.getElementById('editCategory').value.trim();
-    const tags = document.getElementById('editTags').value.split(',').map(s => s.trim()).filter(Boolean);
-    const excerpt = document.getElementById('editExcerpt').value.trim();
-    const content = document.getElementById('editContent').value;
-
-    if (!title || !content) {
-        showMsg('editorMsg', '标题和正文不能为空', 'error');
-        btn.disabled = false;
-        btn.textContent = '保存并提交到 GitHub';
+    if (!title) {
+        showMsg('newPostMsg', '请填写标题', 'error');
         return;
     }
 
-    let isNew = false;
-    let postId = id ? parseInt(id) : 0;
-    let file = '';
-    if (id) {
-        const existing = postsData.find(p => p.id == id);
-        if (existing) file = existing.file;
-    }
-    if (!file) {
-        const maxId = postsData.reduce((max, p) => Math.max(max, p.id), 0);
-        postId = maxId + 1;
-        file = postId + '.md';
-        isNew = true;
-    }
+    const adminUser = sessionStorage.getItem('loginUser') || '管理员';
+    const maxId = postsData.reduce((max, p) => Math.max(max, p.id), 0);
+    const newId = maxId + 1;
+    const file = newId + '.md';
 
     const newPost = {
-        id: postId,
+        id: newId,
         title,
-        date: date || new Date().toISOString().slice(0,10),
+        date,
         category: category || 'uncategorized',
-        excerpt: excerpt || '',
-        tags: tags.length ? tags : ['未分类'],
+        excerpt: '',
+        tags: [],
         file,
-        author: '博客作者'
+        author: adminUser
     };
 
-    let postsJsonContent = null;
-    if (isNew) {
-        postsData.push(newPost);
-        postsJsonContent = JSON.stringify(postsData, null, 4);
-    } else {
-        const index = postsData.findIndex(p => p.id == id);
-        if (index !== -1) {
-            postsData[index] = newPost;
-            postsJsonContent = JSON.stringify(postsData, null, 4);
-        } else {
-            showMsg('editorMsg', '文章不存在', 'error');
-            btn.disabled = false;
-            btn.textContent = '保存并提交到 GitHub';
+    postsData.push(newPost);
+    const jsonContent = JSON.stringify(postsData, null, 4);
+
+    try {
+        await updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`);
+        await updateFileOnGitHub(`post/${file}`, '# ' + title + '\n\n开始书写...', `初始化文章 ${title}`);
+        window.location.href = `editor.html?id=${newId}`;
+    } catch(err) {
+        showMsg('newPostMsg', '创建失败：' + err.message, 'error');
+    }
+}
+
+// ----- 新建标签（添加到下拉框）-----
+function addNewTag() {
+    const input = document.getElementById('newTagInput');
+    const tag = input.value.trim();
+    if (!tag) return;
+    const select = document.getElementById('newCategory');
+    for (let opt of select.options) {
+        if (opt.value === tag) {
+            alert('标签已存在');
             return;
         }
     }
+    const option = document.createElement('option');
+    option.value = tag;
+    option.textContent = tag;
+    select.appendChild(option);
+    select.value = tag;
+    input.value = '';
+}
 
+// ----- 删除文章 -----
+async function deletePost(id) {
+    if (!confirm('确定要删除这篇文章吗？')) return;
+    const post = postsData.find(p => p.id === id);
+    if (!post) return;
+    const index = postsData.indexOf(post);
+    postsData.splice(index, 1);
+    const jsonContent = JSON.stringify(postsData, null, 4);
     try {
-        await updateFileOnGitHub('post/posts.json', postsJsonContent, '更新文章元数据');
-        await updateFileOnGitHub(`post/${file}`, content, `更新文章 ${title}`);
+        await updateFileOnGitHub('post/posts.json', jsonContent, `删除文章 ${post.title}`);
+        try {
+            await updateFileOnGitHub(`post/${post.file}`, '', `删除文章内容 ${post.title}`);
+        } catch(e) {}
         await updateDashboard();
-        closeEditor();
-        showMsg('editorMsg', '文章已成功提交到 GitHub，Pages 将自动重新部署', 'success');
+        alert('文章已删除');
     } catch(err) {
-        showMsg('editorMsg', '提交失败：' + err.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '保存并提交到 GitHub';
+        alert('删除失败：' + err.message);
     }
 }
 
@@ -400,73 +341,10 @@ async function updateFileOnGitHub(path, content, commitMsg) {
     return await putRes.json();
 }
 
-// ----- 删除文章 -----
-async function deletePost(id) {
-    if (!confirm('确定要删除这篇文章吗？')) return;
-    const post = postsData.find(p => p.id === id);
-    if (!post) return;
-    const index = postsData.indexOf(post);
-    postsData.splice(index, 1);
-    const jsonContent = JSON.stringify(postsData, null, 4);
-    try {
-        await updateFileOnGitHub('post/posts.json', jsonContent, `删除文章 ${post.title}`);
-        try {
-            await updateFileOnGitHub(`post/${post.file}`, '', `删除文章内容 ${post.title}`);
-        } catch(e) {}
-        await updateDashboard();
-        alert('文章已删除');
-    } catch(err) {
-        alert('删除失败：' + err.message);
-    }
-}
-
-// ----- 工具栏插入（完整实现）-----
-function insertMarkdown(prefix, suffix, wrapLine = false) {
-    const textarea = document.getElementById('editContent');
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = textarea.value.substring(start, end);
-    const before = textarea.value.substring(0, start);
-    const after = textarea.value.substring(end);
-    let insertText = '';
-    if (wrapLine) {
-        insertText = prefix + selected + suffix;
-    } else {
-        insertText = selected ? prefix + selected + suffix : prefix + suffix;
-    }
-    textarea.value = before + insertText + after;
-    const newCursor = start + insertText.length;
-    textarea.selectionStart = textarea.selectionEnd = newCursor;
-    textarea.focus();
-    updatePreview();
-}
-
-// ----- 键盘快捷键（完整实现）-----
-document.addEventListener('keydown', function(e) {
-    const modal = document.getElementById('editorModal');
-    const textarea = document.getElementById('editContent');
-    if (!modal || !modal.classList.contains('open')) return;
-    if (document.activeElement !== textarea) return;
-    const ctrl = e.ctrlKey || e.metaKey;
-    const shift = e.shiftKey;
-
-    if (ctrl && e.key === 'b') { e.preventDefault(); insertMarkdown('**', '**'); return; }
-    if (ctrl && e.key === 'i') { e.preventDefault(); insertMarkdown('*', '*'); return; }
-    if (ctrl && shift && e.key === '1') { e.preventDefault(); insertMarkdown('# ', '', true); return; }
-    if (ctrl && shift && e.key === '2') { e.preventDefault(); insertMarkdown('## ', '', true); return; }
-    if (ctrl && shift && e.key === '3') { e.preventDefault(); insertMarkdown('### ', '', true); return; }
-    if (ctrl && e.key === 'u') { e.preventDefault(); insertMarkdown('- ', '', true); return; }
-    if (ctrl && shift && e.key === 'o') { e.preventDefault(); insertMarkdown('1. ', '', true); return; }
-    if (ctrl && shift && e.key === 'c') { e.preventDefault(); insertMarkdown('```\n', '\n```'); return; }
-    if (ctrl && shift && e.key === 'q') { e.preventDefault(); insertMarkdown('> ', '', true); return; }
-});
-
 // ----- 初始化 -----
 document.addEventListener('DOMContentLoaded', async function() {
     await initDefaultUser();
 
-    // 如果已登录，直接显示仪表盘
     if (sessionStorage.getItem('adminLogged') === 'true') {
         document.getElementById('loginArea').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
@@ -475,7 +353,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         updateDashboard();
     }
 
-    // 绑定登录按钮
     const loginBtn = document.getElementById('adminLoginBtn');
     if (loginBtn) loginBtn.addEventListener('click', handleAdminLogin);
 });
@@ -485,9 +362,7 @@ window.handleAdminLogin = handleAdminLogin;
 window.logoutAdmin = logoutAdmin;
 window.addUser = addUser;
 window.deleteUser = deleteUser;
-window.openEditor = openEditor;
-window.closeEditor = closeEditor;
-window.savePost = savePost;
-window.deletePost = deletePost;
 window.saveConfig = saveConfig;
-window.insertMarkdown = insertMarkdown;
+window.createAndEdit = createAndEdit;
+window.addNewTag = addNewTag;
+window.deletePost = deletePost;

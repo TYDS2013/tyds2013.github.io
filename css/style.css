@@ -365,6 +365,7 @@ a:hover { color: var(--accent-hover); }
 }
 #backTop.show { opacity: 1; pointer-events: auto; }
 
+/* ===== 加载动画遮罩 ===== */
 #loader {
     position: fixed;
     top: 0;
@@ -376,12 +377,15 @@ a:hover { color: var(--accent-hover); }
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    transition: opacity 0.3s ease;  /* 0.3s 快速淡出 */
+    opacity: 1;
+    transition: opacity 0.4s ease;  /* 0.4s 平滑淡出 */
+    pointer-events: none;  /* 防止干扰点击 */
 }
 #loader.hidden {
     opacity: 0;
     pointer-events: none;
 }
+
 /* 动画容器居中 */
 #loader .pl {
     width: 6em;
@@ -511,4 +515,42 @@ a:hover { color: var(--accent-hover); }
 /* 悬停效果 */
 .slider:hover {
     opacity: 0.85;
+}
+
+
+/* ===== 轮播图文字覆盖 ===== */
+.carousel-slide {
+    position: relative;
+}
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.carousel-caption {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    border-left: 4px solid var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    max-width: 70%;
+    pointer-events: none;
+    user-select: none;
+}
+/* 移动端调整 */
+@media (max-width: 600px) {
+    .carousel-caption {
+        font-size: 0.8rem;
+        padding: 6px 14px;
+        bottom: 16px;
+        left: 16px;
+        max-width: 80%;
+    }
 }

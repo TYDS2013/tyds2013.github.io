@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑文章 - 城建一局的小站</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .editor-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .editor-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .editor-header .actions {
+            display: flex;
+            gap: 12px;
+        }
+        .editor-main {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+        .editor-main textarea {
+            flex: 1;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            resize: none;
+            height: 100%;
+        }
+        .editor-main .preview {
+            flex: 1;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow-y: auto;
+            background: var(--card-bg);
+        }
+        .editor-main .preview h1, .editor-main .preview h2, .editor-main .preview h3 {
+            margin: 10px 0;
+        }
+        .editor-main .preview p {
+            margin: 8px 0;
+            line-height: 1.7;
+        }
+        .editor-main .preview blockquote {
+            border-left: 4px solid var(--accent);
+            padding-left: 16px;
+            color: var(--text-secondary);
+        }
+        .status-msg { padding: 8px 16px; border-radius: 8px; margin: 10px 0; }
+        .status-msg.success { background: #dcfce7; color: #166534; }
+        .status-msg.error { background: #fee2e2; color: #991b1b; }
+        @media (max-width: 768px) {
+            .editor-main { flex-direction: column; height: auto; }
+            .editor-main textarea { height: 400px; }
+            .editor-main .preview { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+<div id="loader"><!-- 加载动画 --></div>
+<div class="editor-container">
+    <div class="editor-header">
+        <h2 id="editorTitle">📝 编辑文章</h2>
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="window.location.href='admin.html'">返回后台</button>
+            <button class="btn btn-primary" id="saveEditorBtn" onclick="saveEditorContent()">保存并提交</button>
+        </div>
+    </div>
+    <div id="editorMsg" class="status-msg" style="display:none;"></div>
+    <div class="editor-main">
+        <textarea id="editorContent" placeholder="在此编写 Markdown 内容..."></textarea>
+        <div class="preview" id="previewArea">预览将显示在这里</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>

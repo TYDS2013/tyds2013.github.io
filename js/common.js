@@ -154,25 +154,70 @@ window.updateLoginUI = updateLoginUI;
 window.logoutUser = logoutUser;
 
 // =============================================
-// 加载动画控制（快速隐藏）
+// 加载动画控制（至少显示 1.5 秒，防闪烁）
 // =============================================
+
+const MIN_LOADER_DISPLAY = 1500; // 最小显示时间（毫秒），可自行调整
+let loaderStartTime = null;
+let loaderHidden = false;
+
 function hideLoader() {
+    if (loaderHidden) return;
     const loader = document.getElementById('loader');
-    if (loader) {
+    if (!loader) return;
+
+    const elapsed = Date.now() - loaderStartTime;
+    const remain = MIN_LOADER_DISPLAY - elapsed;
+
+    if (remain > 0) {
+        // 未达到最小显示时间，延迟隐藏
+        setTimeout(() => {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 400); // 与 CSS transition 时间匹配
+            loaderHidden = true;
+        }, remain);
+    } else {
+        // 已达标，直接隐藏
         loader.classList.add('hidden');
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 400);
+        loaderHidden = true;
     }
 }
 
-// DOM 就绪后立即隐藏（不等待图片等资源加载）
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(hideLoader, 50);
+// 检查是否在当前会话中已加载过
+if (!sessionStorage.getItem('loaderShown')) {
+    // 首次加载（新会话），显示动画
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        loader.classList.remove('hidden');
+        loaderStartTime = Date.now();
+    }
+    sessionStorage.setItem('loaderShown', 'true');
+
+    // DOM 就绪后尝试隐藏（但会等待最小时间）
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            hideLoader();
+        });
+    } else {
+        hideLoader();
+    }
+
+    // 后备：load 事件触发时确保隐藏
+    window.addEventListener('load', function() {
+        hideLoader();
     });
 } else {
-    setTimeout(hideLoader, 50);
+    // 非首次加载（切换页面、刷新），直接隐藏动画
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.style.display = 'none';
+        loader.classList.add('hidden');
+    }
 }
-
-// 后备：load 事件触发时确保隐藏
-window.addEventListener('load', function() {
-    hideLoader();
-});
