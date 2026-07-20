@@ -365,7 +365,6 @@ a:hover { color: var(--accent-hover); }
 }
 #backTop.show { opacity: 1; pointer-events: auto; }
 
-/* ===== 加载动画遮罩 ===== */
 #loader {
     position: fixed;
     top: 0;
@@ -377,8 +376,7 @@ a:hover { color: var(--accent-hover); }
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    transition: opacity 0.6s ease;
-    pointer-events: none; /* 防止干扰点击，但确保可见时阻止交互 */
+    transition: opacity 0.3s ease;  /* 0.3s 快速淡出 */
 }
 #loader.hidden {
     opacity: 0;

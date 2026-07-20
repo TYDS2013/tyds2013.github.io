@@ -1,5 +1,5 @@
 // =============================================
-// 公共功能：时钟、轮播、返回顶部、导航高亮、加载动画、主题切换、登录状态
+// 公共功能：时钟、主题、轮播、返回顶部、导航高亮、登录状态
 // =============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -34,20 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.checked = (theme === 'dark');
         }
     }
+
     applyTheme(currentTheme);
 
-    // 监听系统主题变化（仅在用户未手动设置时）
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         if (!localStorage.getItem('theme')) {
             applyTheme(e.matches ? 'dark' : 'light');
         }
     });
 
-    // 绑定拨动开关事件（全局监听，确保动态添加的元素也能响应）
     document.addEventListener('change', function(e) {
         if (e.target && e.target.id === 'themeToggleCheckbox') {
-            const newTheme = e.target.checked ? 'dark' : 'light';
-            applyTheme(newTheme);
+            applyTheme(e.target.checked ? 'dark' : 'light');
         }
     });
 
@@ -105,26 +103,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ----- 6. 登录状态 UI 更新 -----
     updateLoginUI();
-
-    // ----- 7. 加载动画隐藏（若存在）-----
-    const loader = document.getElementById('loader');
-    if (loader) {
-        if (document.readyState === 'complete') {
-            loader.classList.add('hidden');
-        } else {
-            window.addEventListener('load', function() {
-                setTimeout(() => {
-                    loader.classList.add('hidden');
-                }, 300);
-            });
-        }
-    }
-
-    // ----- 8. 更新日期（footer 中的最后更新）-----
-    const updateDateEl = document.getElementById('updateDate');
-    if (updateDateEl) {
-        updateDateEl.textContent = new Date().toLocaleDateString('zh-CN');
-    }
 });
 
 // =============================================
@@ -172,6 +150,29 @@ function logoutUser() {
     location.reload();
 }
 
-// 确保函数暴露到全局
 window.updateLoginUI = updateLoginUI;
 window.logoutUser = logoutUser;
+
+// =============================================
+// 加载动画控制（快速隐藏）
+// =============================================
+function hideLoader() {
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.classList.add('hidden');
+    }
+}
+
+// DOM 就绪后立即隐藏（不等待图片等资源加载）
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(hideLoader, 50);
+    });
+} else {
+    setTimeout(hideLoader, 50);
+}
+
+// 后备：load 事件触发时确保隐藏
+window.addEventListener('load', function() {
+    hideLoader();
+});
