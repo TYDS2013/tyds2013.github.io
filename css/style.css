@@ -439,3 +439,78 @@ a:hover { color: var(--accent-hover); }
 .pl__ring--b { animation-name: ringB; }
 .pl__ring--c { animation-name: ringC; }
 .pl__ring--d { animation-name: ringD; }
+
+
+/* ===== 底部主题切换开关 ===== */
+.footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.theme-label {
+    font-size: 1.1rem;
+    line-height: 1;
+    user-select: none;
+}
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--border-color);
+    transition: 0.3s;
+    border-radius: 34px;
+}
+.slider::before {
+    content: "";
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+/* 暗色模式下的开关状态 */
+[data-theme="dark"] .slider {
+    background: var(--accent);
+}
+[data-theme="dark"] .slider::before {
+    transform: translateX(24px);
+    background: #1e293b;
+}
+/* 亮色模式下的开关状态 */
+[data-theme="light"] .slider {
+    background: #cbd5e1;
+}
+[data-theme="light"] .slider::before {
+    transform: translateX(0);
+    background: #fff;
+}
+/* 悬停效果 */
+.slider:hover {
+    opacity: 0.85;
+}

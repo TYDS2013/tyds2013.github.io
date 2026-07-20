@@ -1,12 +1,11 @@
 // =============================================
-// 后台管理逻辑（仅管理员可登录）
+// 后台管理逻辑（完整版）
 // =============================================
 
 // ----- 管理员白名单 -----
 const ADMIN_ALLOWLIST = ['TYDS2013'];
 
-// ----- 用户管理工具（与 common.js 共用）-----
-// 如果 common.js 未加载，提供后备实现
+// ----- 用户管理工具（与 common.js 共用，提供后备）-----
 if (typeof getUsers === 'undefined') {
     window.getUsers = function() {
         const data = localStorage.getItem('users');
@@ -24,7 +23,7 @@ if (typeof getUsers === 'undefined') {
     };
 }
 
-// 初始化默认管理员（仅当无用户时）
+// ----- 初始化默认管理员（仅当无用户时）-----
 async function initDefaultUser() {
     const users = getUsers();
     if (Object.keys(users).length === 0) {
@@ -219,17 +218,248 @@ function renderPostList() {
     `).join('');
 }
 
-// ----- 文章编辑器（复用原有代码）-----
-function openEditor(id) { /* ... 原有实现 ... */ }
-function closeEditor() { /* ... 原有实现 ... */ }
-function updatePreview() { /* ... 原有实现 ... */ }
-async function savePost() { /* ... 原有实现 ... */ }
-async function deletePost(id) { /* ... 原有实现 ... */ }
-function insertMarkdown(prefix, suffix, wrapLine) { /* ... 原有实现 ... */ }
+// ----- 文章编辑器（完整实现）-----
+function openEditor(id) {
+    const modal = document.getElementById('editorModal');
+    modal.classList.add('open');
+    document.getElementById('editorMsg').style.display = 'none';
+    if (id) {
+        const post = postsData.find(p => p.id === id);
+        if (!post) return;
+        document.getElementById('editorTitle').textContent = '编辑文章';
+        document.getElementById('editId').value = id;
+        document.getElementById('editTitle').value = post.title;
+        document.getElementById('editDate').value = post.date;
+        document.getElementById('editCategory').value = post.category;
+        document.getElementById('editTags').value = post.tags.join(', ');
+        document.getElementById('editExcerpt').value = post.excerpt;
+        fetch(`post/${post.file}`)
+            .then(res => res.text())
+            .then(md => {
+                document.getElementById('editContent').value = md;
+                updatePreview();
+            })
+            .catch(() => {
+                document.getElementById('editContent').value = '# 加载失败';
+                updatePreview();
+            });
+    } else {
+        document.getElementById('editorTitle').textContent = '新建文章';
+        document.getElementById('editId').value = '';
+        document.getElementById('editTitle').value = '';
+        document.getElementById('editDate').value = new Date().toISOString().slice(0,10);
+        document.getElementById('editCategory').value = '';
+        document.getElementById('editTags').value = '';
+        document.getElementById('editExcerpt').value = '';
+        document.getElementById('editContent').value = '# 新文章\n\n开始书写...';
+        updatePreview();
+    }
+}
 
-// 键盘快捷键（复用原有代码）
+function closeEditor() {
+    document.getElementById('editorModal').classList.remove('open');
+}
+
+function updatePreview() {
+    const content = document.getElementById('editContent').value;
+    try {
+        document.getElementById('previewArea').innerHTML = marked.parse(content);
+    } catch(e) {
+        document.getElementById('previewArea').innerHTML = '<span style="color:red;">Markdown 解析错误</span>';
+    }
+}
+
+// 监听编辑器内容变化
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'editContent') updatePreview();
+});
+
+// ----- 保存文章（GitHub API）-----
+async function savePost() {
+    const btn = document.getElementById('savePostBtn');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+    document.getElementById('editorMsg').style.display = 'none';
+
+    const id = document.getElementById('editId').value.trim();
+    const title = document.getElementById('editTitle').value.trim();
+    const date = document.getElementById('editDate').value.trim();
+    const category = document.getElementById('editCategory').value.trim();
+    const tags = document.getElementById('editTags').value.split(',').map(s => s.trim()).filter(Boolean);
+    const excerpt = document.getElementById('editExcerpt').value.trim();
+    const content = document.getElementById('editContent').value;
+
+    if (!title || !content) {
+        showMsg('editorMsg', '标题和正文不能为空', 'error');
+        btn.disabled = false;
+        btn.textContent = '保存并提交到 GitHub';
+        return;
+    }
+
+    let isNew = false;
+    let postId = id ? parseInt(id) : 0;
+    let file = '';
+    if (id) {
+        const existing = postsData.find(p => p.id == id);
+        if (existing) file = existing.file;
+    }
+    if (!file) {
+        const maxId = postsData.reduce((max, p) => Math.max(max, p.id), 0);
+        postId = maxId + 1;
+        file = postId + '.md';
+        isNew = true;
+    }
+
+    const newPost = {
+        id: postId,
+        title,
+        date: date || new Date().toISOString().slice(0,10),
+        category: category || 'uncategorized',
+        excerpt: excerpt || '',
+        tags: tags.length ? tags : ['未分类'],
+        file,
+        author: '博客作者'
+    };
+
+    let postsJsonContent = null;
+    if (isNew) {
+        postsData.push(newPost);
+        postsJsonContent = JSON.stringify(postsData, null, 4);
+    } else {
+        const index = postsData.findIndex(p => p.id == id);
+        if (index !== -1) {
+            postsData[index] = newPost;
+            postsJsonContent = JSON.stringify(postsData, null, 4);
+        } else {
+            showMsg('editorMsg', '文章不存在', 'error');
+            btn.disabled = false;
+            btn.textContent = '保存并提交到 GitHub';
+            return;
+        }
+    }
+
+    try {
+        await updateFileOnGitHub('post/posts.json', postsJsonContent, '更新文章元数据');
+        await updateFileOnGitHub(`post/${file}`, content, `更新文章 ${title}`);
+        await updateDashboard();
+        closeEditor();
+        showMsg('editorMsg', '文章已成功提交到 GitHub，Pages 将自动重新部署', 'success');
+    } catch(err) {
+        showMsg('editorMsg', '提交失败：' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '保存并提交到 GitHub';
+    }
+}
+
+// ----- GitHub API 辅助 -----
+async function updateFileOnGitHub(path, content, commitMsg) {
+    if (!githubConfig.token || !githubConfig.repo) {
+        throw new Error('请先在后台配置 GitHub Token 和仓库信息');
+    }
+    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/${path}`;
+    let sha = null;
+    try {
+        const getRes = await fetch(url, {
+            headers: {
+                'Authorization': `token ${githubConfig.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        if (getRes.ok) {
+            const data = await getRes.json();
+            sha = data.sha;
+        } else if (getRes.status !== 404) {
+            const err = await getRes.json();
+            throw new Error(err.message || '获取文件信息失败');
+        }
+    } catch(e) {
+        if (!e.message.includes('404')) throw e;
+    }
+
+    const payload = {
+        message: commitMsg || 'Update file via API',
+        content: btoa(unescape(encodeURIComponent(content))),
+        branch: githubConfig.branch
+    };
+    if (sha) payload.sha = sha;
+
+    const putRes = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `token ${githubConfig.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify(payload)
+    });
+    if (!putRes.ok) {
+        const err = await putRes.json();
+        throw new Error(err.message || '更新文件失败');
+    }
+    return await putRes.json();
+}
+
+// ----- 删除文章 -----
+async function deletePost(id) {
+    if (!confirm('确定要删除这篇文章吗？')) return;
+    const post = postsData.find(p => p.id === id);
+    if (!post) return;
+    const index = postsData.indexOf(post);
+    postsData.splice(index, 1);
+    const jsonContent = JSON.stringify(postsData, null, 4);
+    try {
+        await updateFileOnGitHub('post/posts.json', jsonContent, `删除文章 ${post.title}`);
+        try {
+            await updateFileOnGitHub(`post/${post.file}`, '', `删除文章内容 ${post.title}`);
+        } catch(e) {}
+        await updateDashboard();
+        alert('文章已删除');
+    } catch(err) {
+        alert('删除失败：' + err.message);
+    }
+}
+
+// ----- 工具栏插入（完整实现）-----
+function insertMarkdown(prefix, suffix, wrapLine = false) {
+    const textarea = document.getElementById('editContent');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.substring(start, end);
+    const before = textarea.value.substring(0, start);
+    const after = textarea.value.substring(end);
+    let insertText = '';
+    if (wrapLine) {
+        insertText = prefix + selected + suffix;
+    } else {
+        insertText = selected ? prefix + selected + suffix : prefix + suffix;
+    }
+    textarea.value = before + insertText + after;
+    const newCursor = start + insertText.length;
+    textarea.selectionStart = textarea.selectionEnd = newCursor;
+    textarea.focus();
+    updatePreview();
+}
+
+// ----- 键盘快捷键（完整实现）-----
 document.addEventListener('keydown', function(e) {
-    // ... 原有实现 ...
+    const modal = document.getElementById('editorModal');
+    const textarea = document.getElementById('editContent');
+    if (!modal || !modal.classList.contains('open')) return;
+    if (document.activeElement !== textarea) return;
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+
+    if (ctrl && e.key === 'b') { e.preventDefault(); insertMarkdown('**', '**'); return; }
+    if (ctrl && e.key === 'i') { e.preventDefault(); insertMarkdown('*', '*'); return; }
+    if (ctrl && shift && e.key === '1') { e.preventDefault(); insertMarkdown('# ', '', true); return; }
+    if (ctrl && shift && e.key === '2') { e.preventDefault(); insertMarkdown('## ', '', true); return; }
+    if (ctrl && shift && e.key === '3') { e.preventDefault(); insertMarkdown('### ', '', true); return; }
+    if (ctrl && e.key === 'u') { e.preventDefault(); insertMarkdown('- ', '', true); return; }
+    if (ctrl && shift && e.key === 'o') { e.preventDefault(); insertMarkdown('1. ', '', true); return; }
+    if (ctrl && shift && e.key === 'c') { e.preventDefault(); insertMarkdown('```\n', '\n```'); return; }
+    if (ctrl && shift && e.key === 'q') { e.preventDefault(); insertMarkdown('> ', '', true); return; }
 });
 
 // ----- 初始化 -----

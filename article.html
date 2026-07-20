@@ -20,10 +20,7 @@
 <div class="container">
     <div class="top-bar">
         <div id="clock"></div>
-        <div class="theme-toggle" id="themeToggle">
-            <button data-theme="light">☀️ 亮</button>
-            <button data-theme="dark">🌙 暗</button>
-        </div>
+        
     </div>
     <nav class="top-nav">
         <a href="index.html">主页</a>
@@ -54,8 +51,20 @@
     
 
     <div class="footer">
-        © 2026 我的个人博客 · 保留所有权利
-        <div class="update-date">最后更新：<span id="updateDate"></span></div>
+        <div class="footer">
+    <div class="footer-content">
+        <span>© 2026 城建一局 </span>
+        <div class="theme-switch-wrapper">
+            <span class="theme-label">🌙</span>
+            <label class="theme-switch">
+                <input type="checkbox" id="themeToggleCheckbox">
+                <span class="slider"></span>
+            </label>
+            <span class="theme-label">☀️</span>
+        </div>
+    </div>
+    <div class="update-date">最后更新：<span id="updateDate"></span></div>
+</div>
     </div>
 </div>
 <div id="backTop">↑</div>

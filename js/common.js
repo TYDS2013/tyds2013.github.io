@@ -1,5 +1,5 @@
 // =============================================
-// 公共功能：时钟、主题、轮播、返回顶部、导航高亮、登录状态
+// 公共功能：时钟、轮播、返回顶部、导航高亮、加载动画、主题切换、登录状态
 // =============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -22,28 +22,32 @@ document.addEventListener('DOMContentLoaded', function() {
     updateClock();
     setInterval(updateClock, 1000);
 
-    // ----- 2. 亮/暗主题 -----
-    const themeToggle = document.getElementById('themeToggle');
-    const themeButtons = themeToggle ? themeToggle.querySelectorAll('button') : [];
+    // ----- 2. 亮/暗主题（拨动开关）-----
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     let currentTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
-    applyTheme(currentTheme);
 
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
-        themeButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.theme === theme);
-        });
+        const checkbox = document.getElementById('themeToggleCheckbox');
+        if (checkbox) {
+            checkbox.checked = (theme === 'dark');
+        }
     }
-    themeButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            applyTheme(this.dataset.theme);
-        });
-    });
+    applyTheme(currentTheme);
+
+    // 监听系统主题变化（仅在用户未手动设置时）
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         if (!localStorage.getItem('theme')) {
             applyTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+
+    // 绑定拨动开关事件（全局监听，确保动态添加的元素也能响应）
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'themeToggleCheckbox') {
+            const newTheme = e.target.checked ? 'dark' : 'light';
+            applyTheme(newTheme);
         }
     });
 
@@ -105,7 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ----- 7. 加载动画隐藏（若存在）-----
     const loader = document.getElementById('loader');
     if (loader) {
-        // 如果页面已完全加载，立即隐藏；否则等待 load 事件
         if (document.readyState === 'complete') {
             loader.classList.add('hidden');
         } else {
@@ -115,6 +118,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 300);
             });
         }
+    }
+
+    // ----- 8. 更新日期（footer 中的最后更新）-----
+    const updateDateEl = document.getElementById('updateDate');
+    if (updateDateEl) {
+        updateDateEl.textContent = new Date().toLocaleDateString('zh-CN');
     }
 });
 
