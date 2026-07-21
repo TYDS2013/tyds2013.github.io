@@ -30,9 +30,9 @@ function renderPosts(postsToShow) {
         <div class="post-card">
             <h3><a href="article.html?id=${p.id}">${p.title}</a></h3>
             <div class="meta">
-                <span>📅 ${p.date}</span>
-                <span>✍️ ${p.author || '博客作者'}</span>
-                <span>👁️ ${views[p.id] || 0}</span>
+                <span>${getIcon('date')} ${p.date}</span>
+                <span>${getIcon('author')} ${p.author || '博客作者'}</span>
+                <span>${getIcon('views')} ${views[p.id] || 0}</span>
             </div>
             <div class="excerpt">${p.excerpt}</div>
         </div>

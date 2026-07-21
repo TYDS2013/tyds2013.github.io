@@ -27,11 +27,11 @@ async function loadArticle() {
         localStorage.setItem('views', JSON.stringify(views));
 
         document.getElementById('articleMeta').innerHTML = `
-            <span>${post.date}</span>
-            <span># ${post.category}</span>
-            <span>✍️ ${post.author || '博客作者'}</span>
-            <span>👁️ ${views[id]} 次浏览</span>
+            <span>${getIcon('date')} ${post.date}</span>
+            <span>${getIcon('author')} ${post.author || '博客作者'}</span>
+            <span>${getIcon('views')} ${views[id]} 次浏览</span>
         `;
+        
         renderComments(id);
         updateCommentForm();
     } catch (e) {

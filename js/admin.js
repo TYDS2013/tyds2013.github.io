@@ -206,7 +206,7 @@ function updateRecentPosts() {
         container.innerHTML = recent.map(p => `
             <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color);">
                 <span><strong>${p.title}</strong> (${p.date})</span>
-                <span>👁️ ${views[p.id] || 0} 次浏览</span>
+                <span>${getIcon('views')} ${views[p.id] || 0} 次浏览</span>
             </div>
         `).join('');
     }
