@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        /* ===== 编辑器容器 ===== */
         .editor-container {
             max-width: 1400px;
             margin: 20px auto;
@@ -19,6 +20,8 @@
             padding: 16px 0;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
         .editor-header h2 {
             font-size: 1.4rem;
@@ -28,65 +31,226 @@
             display: flex;
             gap: 12px;
         }
+
+        /* ===== 工具栏 ===== */
+        .editor-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            padding: 8px 12px;
+            background: var(--nav-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px 10px 0 0;
+            border-bottom: none;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .editor-toolbar .toolbar-group {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            padding: 0 6px;
+            border-right: 1px solid var(--border-color);
+        }
+        .editor-toolbar .toolbar-group:last-child {
+            border-right: none;
+        }
+        .editor-toolbar button {
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            min-width: 28px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .editor-toolbar button:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+        .editor-toolbar button.active {
+            background: var(--accent);
+            color: #fff;
+        }
+        .editor-toolbar .separator {
+            width: 1px;
+            height: 24px;
+            background: var(--border-color);
+            margin: 0 4px;
+        }
+        .editor-toolbar .toolbar-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 0 4px;
+            opacity: 0.6;
+        }
+
+        /* ===== 编辑区 ===== */
         .editor-main {
             display: flex;
-            gap: 20px;
-            height: calc(100vh - 200px);
+            gap: 0;
+            height: calc(100vh - 280px);
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
         }
         .editor-main textarea {
             flex: 1;
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-family: 'Courier New', monospace;
+            padding: 16px 20px;
+            border: none;
+            font-family: 'Courier New', Consolas, monospace;
             font-size: 0.95rem;
-            line-height: 1.6;
+            line-height: 1.8;
             background: var(--input-bg);
             color: var(--text-primary);
             resize: none;
             height: 100%;
+            outline: none;
         }
         .editor-main .preview {
             flex: 1;
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            padding: 16px 24px;
             overflow-y: auto;
             background: var(--card-bg);
+            border-left: 1px solid var(--border-color);
         }
-        .editor-main .preview h1, .editor-main .preview h2, .editor-main .preview h3 {
-            margin: 10px 0;
+        .editor-main .preview h1, .editor-main .preview h2,
+        .editor-main .preview h3, .editor-main .preview h4 {
+            margin: 12px 0 8px 0;
         }
         .editor-main .preview p {
             margin: 8px 0;
-            line-height: 1.7;
+            line-height: 1.8;
         }
         .editor-main .preview blockquote {
             border-left: 4px solid var(--accent);
             padding-left: 16px;
             color: var(--text-secondary);
+            margin: 10px 0;
         }
+        .editor-main .preview code {
+            background: var(--nav-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .editor-main .preview pre {
+            background: var(--nav-bg);
+            padding: 12px 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .editor-main .preview pre code {
+            background: none;
+            padding: 0;
+        }
+        .editor-main .preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .editor-main .preview th, .editor-main .preview td {
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            text-align: left;
+        }
+        .editor-main .preview th {
+            background: var(--nav-bg);
+        }
+        .editor-main .preview img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
         .status-msg { padding: 8px 16px; border-radius: 8px; margin: 10px 0; }
         .status-msg.success { background: #dcfce7; color: #166534; }
         .status-msg.error { background: #fee2e2; color: #991b1b; }
+        .btn { padding: 8px 20px; border: none; border-radius: 30px; cursor: pointer; font-weight: 500; transition: 0.15s; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-secondary { background: var(--nav-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--border-color); }
+
         @media (max-width: 768px) {
             .editor-main { flex-direction: column; height: auto; }
             .editor-main textarea { height: 400px; }
-            .editor-main .preview { height: 400px; }
+            .editor-main .preview { height: 400px; border-left: none; border-top: 1px solid var(--border-color); }
+            .editor-toolbar { gap: 1px; padding: 4px 8px; }
+            .editor-toolbar button { padding: 2px 6px; font-size: 0.75rem; min-width: 24px; }
+            .editor-toolbar .toolbar-group { padding: 0 4px; }
         }
     </style>
 </head>
 <body>
 <div id="loader"><!-- 加载动画 --></div>
 <div class="editor-container">
+    <!-- 顶部标题栏 -->
     <div class="editor-header">
         <h2 id="editorTitle">📝 编辑文章</h2>
         <div class="actions">
             <button class="btn btn-secondary" onclick="window.location.href='admin.html'">返回后台</button>
-            <button class="btn btn-primary" id="saveEditorBtn" onclick="saveEditorContent()">保存并提交</button>
+            <button class="btn btn-primary" id="saveEditorBtn" onclick="saveEditorContent()">💾 保存并提交</button>
         </div>
     </div>
+
+    <!-- 消息提示 -->
     <div id="editorMsg" class="status-msg" style="display:none;"></div>
+
+    <!-- 工具栏 -->
+    <div class="editor-toolbar" id="toolbar">
+        <!-- 标题 -->
+        <div class="toolbar-group">
+            <span class="toolbar-label">标题</span>
+            <button onclick="insertMarkdown('# ', '')" title="标题1 (Ctrl+1)">H1</button>
+            <button onclick="insertMarkdown('## ', '')" title="标题2 (Ctrl+2)">H2</button>
+            <button onclick="insertMarkdown('### ', '')" title="标题3 (Ctrl+3)">H3</button>
+            <button onclick="insertMarkdown('#### ', '')" title="标题4 (Ctrl+4)">H4</button>
+            <button onclick="insertMarkdown('##### ', '')" title="标题5 (Ctrl+5)">H5</button>
+            <button onclick="insertMarkdown('###### ', '')" title="标题6 (Ctrl+6)">H6</button>
+            <button onclick="insertMarkdown('', '', true)" title="清除标题 (Ctrl+0)">¶</button>
+        </div>
+
+        <!-- 格式 -->
+        <div class="toolbar-group">
+            <button onclick="insertMarkdown('**', '**')" title="加粗 (Ctrl+B)"><b>B</b></button>
+            <button onclick="insertMarkdown('*', '*')" title="斜体 (Ctrl+I)"><i>I</i></button>
+            <button onclick="insertMarkdown('`', '`')" title="行内代码 (Ctrl+Shift+`)"><code>{ }</code></button>
+            <button onclick="insertMarkdown('~~', '~~')" title="删除线 (Alt+Shift+5)"><s>S</s></button>
+            <button onclick="insertMarkdown('<u>', '</u>')" title="下划线 (Ctrl+U)"><u>U</u></button>
+            <button onclick="insertMarkdown('==', '==')" title="高亮 (需扩展语法)">H</button>
+        </div>
+
+        <!-- 列表 -->
+        <div class="toolbar-group">
+            <button onclick="insertMarkdown('- ', '', true)" title="无序列表 (Ctrl+Shift+])">•</button>
+            <button onclick="insertMarkdown('1. ', '', true)" title="有序列表 (Ctrl+Shift+[)">1.</button>
+            <button onclick="insertMarkdown('- [ ] ', '', true)" title="任务列表">☐</button>
+            <button onclick="insertMarkdown('> ', '', true)" title="引用 (Ctrl+Shift+Q)">❝</button>
+        </div>
+
+        <!-- 插入 -->
+        <div class="toolbar-group">
+            <button onclick="insertMarkdown('[', '](url)')" title="链接 (Ctrl+K)">🔗</button>
+            <button onclick="insertMarkdown('![', '](url)')" title="图片 (Ctrl+Shift+I)">🖼</button>
+            <button onclick="insertMarkdown('```\n', '\n```')" title="代码块 (Ctrl+Shift+K)">{ }</button>
+            <button onclick="insertMarkdown('$$\n', '\n$$')" title="数学公式 (Ctrl+Shift+M)">∑</button>
+            <button onclick="insertTable()" title="表格 (Ctrl+T)">⊞</button>
+        </div>
+
+        <!-- 视图 -->
+        <div class="toolbar-group" style="margin-left:auto;">
+            <button onclick="toggleSourceMode()" title="源码模式 (Ctrl+/)">⌨️</button>
+            <button onclick="toggleWordWrap()" title="自动换行">↩</button>
+        </div>
+    </div>
+
+    <!-- 编辑区 -->
     <div class="editor-main">
         <textarea id="editorContent" placeholder="在此编写 Markdown 内容..."></textarea>
         <div class="preview" id="previewArea">预览将显示在这里</div>
