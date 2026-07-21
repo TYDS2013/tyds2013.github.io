@@ -21,16 +21,19 @@
 <div class="container">
     <!-- 顶部栏：时间 + 主题切换 -->
     <div class="top-bar">
-        <span style="display:flex; align-items:center; gap:6px;">
-     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-secondary);">
-        <path stroke="none" d="M0 0h24v24H0z"/>
-        <circle cx="12" cy="12" r="9" />
-        <polyline points="12 7 12 12 15 15" />
-     </svg>
-     <span id="clock"></span>
-    </span></div>
-        
-    </div>
+    <span style="display:flex; align-items:center; gap:6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-secondary);">
+            <path stroke="none" d="M0 0h24v24H0z"/>
+            <circle cx="12" cy="12" r="9" />
+            <polyline points="12 7 12 12 15 15" />
+        </svg>
+        <span id="clock"></span>
+    </span>
+</div>
+<!-- 这里只有一个 </div>，导航直接跟在后面，无空隙 -->
+<nav class="top-nav">
+    <!-- 导航链接 -->
+</nav>
 
     <!-- 导航 -->
     <nav class="top-nav">
