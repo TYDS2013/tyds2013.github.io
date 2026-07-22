@@ -138,6 +138,8 @@ a:hover { color: var(--accent-hover); }
     height: 100%;
     opacity: 0;
     transition: opacity 1s ease;
+    top: 0;
+    left: 0;
 }
 .carousel-slide.active {
     opacity: 1;
@@ -685,4 +687,44 @@ a:hover { color: var(--accent-hover); }
 .article-meta svg,
 #articleMeta svg {
     vertical-align: middle;
+}
+
+
+/* ===== 统一 SVG 图标与文字对齐 ===== */
+svg.icon-tabler,
+svg[class*="icon-tabler"] {
+    display: inline-block;
+    vertical-align: middle;
+    /* 默认高度与文字行高匹配，可根据需要调整 */
+    height: 1.1em;
+    width: 1.1em;
+    /* 让图标与文字基线对齐，避免偏上 */
+    margin-right: 2px;
+    flex-shrink: 0;
+}
+
+/* 对于已固定尺寸的图标，保留其尺寸，只做对齐 */
+svg.icon-tabler[width],
+svg[class*="icon-tabler"][width] {
+    width: auto !important;  /* 允许使用 viewBox 比例，但保留高度设置 */
+    height: 1.1em !important;
+}
+
+/* 使用 flex 布局时，确保图标与文字同行居中 */
+.meta span,
+#articleMeta span,
+.post-meta span,
+.footer-content span,
+.footer-left .footer-copyright,
+.footer-left .footer-update {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 登录状态中的用户图标 */
+#loginNav span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
