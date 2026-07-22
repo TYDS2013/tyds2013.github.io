@@ -554,3 +554,35 @@ a:hover { color: var(--accent-hover); }
         max-width: 80%;
     }
 }
+
+
+/* ===== 底部链接（地图入口） ===== */
+.footer-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0;
+}
+.footer-links a {
+    display: inline-block;
+    padding: 6px 18px;
+    background: var(--accent);
+    color: #fff !important;
+    border-radius: 30px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+    font-size: 0.9rem;
+    border: none;
+}
+.footer-links a:hover {
+    background: var(--accent-hover);
+    transform: scale(1.02);
+    text-decoration: none;
+}
+/* 暗色模式下保持高亮 */
+[data-theme="dark"] .footer-links a {
+    background: var(--accent);
+    color: #fff !important;
+}
