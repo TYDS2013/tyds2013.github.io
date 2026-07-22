@@ -49,62 +49,80 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ----- 3. 轮播图 -----
-    const slides = document.querySelectorAll('.carousel-slide');
-    const dots = document.querySelectorAll('.carousel-dots span');
-    let currentSlide = 0;
-    let intervalId = null;
-    if (slides.length > 0) {
-        function showSlide(index) {
-            slides.forEach((s, i) => s.classList.toggle('active', i === index));
-            dots.forEach((d, i) => d.classList.toggle('active', i === index));
-            currentSlide = index;
-        }
-        function nextSlide() { showSlide((currentSlide + 1) % slides.length); }
-        function prevSlide() { showSlide((currentSlide - 1 + slides.length) % slides.length); }
-        intervalId = setInterval(nextSlide, 5000);
-        dots.forEach((dot, i) => {
-            dot.addEventListener('click', () => {
-                clearInterval(intervalId);
-                showSlide(i);
-                intervalId = setInterval(nextSlide, 5000);
-            });
-        });
-        document.querySelector('.carousel-arrow.left')?.addEventListener('click', () => {
-            clearInterval(intervalId);
-            prevSlide();
-            intervalId = setInterval(nextSlide, 5000);
-        });
-        document.querySelector('.carousel-arrow.right')?.addEventListener('click', () => {
-            clearInterval(intervalId);
-            nextSlide();
-            intervalId = setInterval(nextSlide, 5000);
-        });
+    // ----- 3. 轮播图（优化版）-----
+const slides = document.querySelectorAll('.carousel-slide');
+const dots = document.querySelectorAll('.carousel-dots span');
+let currentSlide = 0;
+let intervalId = null;
+
+function showSlide(index) {
+    // 边界检查
+    if (slides.length === 0) return;
+    const idx = (index + slides.length) % slides.length;
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    currentSlide = idx;
+}
+
+function nextSlide() {
+    showSlide(currentSlide + 1);
+}
+
+function prevSlide() {
+    showSlide(currentSlide - 1);
+}
+
+function startAutoPlay() {
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(nextSlide, 5000);
+}
+
+function stopAutoPlay() {
+    if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
     }
+}
 
-        // 暴露轮播函数供 HTML onclick 调用
+// 初始化
+if (slides.length > 0) {
+    // 确保第一张为激活状态
+    showSlide(0);
+    startAutoPlay();
+
+    // 圆点点击
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => {
+            stopAutoPlay();
+            showSlide(i);
+            startAutoPlay();
+        });
+    });
+
+    // 左右箭头点击
+    document.querySelector('.carousel-arrow.left')?.addEventListener('click', () => {
+        stopAutoPlay();
+        prevSlide();
+        startAutoPlay();
+    });
+    document.querySelector('.carousel-arrow.right')?.addEventListener('click', () => {
+        stopAutoPlay();
+        nextSlide();
+        startAutoPlay();
+    });
+}
+
+// 暴露全局函数供 HTML onclick 调用（保持兼容）
 window.prevSlide = function() {
-    const slides = document.querySelectorAll('.carousel-slide');
-    const dots = document.querySelectorAll('.carousel-dots span');
-    let current = 0;
-    slides.forEach((s, i) => { if (s.classList.contains('active')) current = i; });
-    const next = (current - 1 + slides.length) % slides.length;
-    slides.forEach((s, i) => s.classList.toggle('active', i === next));
-    dots.forEach((d, i) => d.classList.toggle('active', i === next));
+    stopAutoPlay();
+    prevSlide();
+    startAutoPlay();
 };
-
 window.nextSlide = function() {
-    const slides = document.querySelectorAll('.carousel-slide');
-    const dots = document.querySelectorAll('.carousel-dots span');
-    let current = 0;
-    slides.forEach((s, i) => { if (s.classList.contains('active')) current = i; });
-    const next = (current + 1) % slides.length;
-    slides.forEach((s, i) => s.classList.toggle('active', i === next));
-    dots.forEach((d, i) => d.classList.toggle('active', i === next));
+    stopAutoPlay();
+    nextSlide();
+    startAutoPlay();
 };
-
-
-
 
     // ----- 4. 返回顶部 -----
     const backTop = document.getElementById('backTop');
