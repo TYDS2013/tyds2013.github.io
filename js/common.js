@@ -49,19 +49,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ----- 3. 轮播图（优化版）-----
+// ----- 3. 轮播图 -----
 const slides = document.querySelectorAll('.carousel-slide');
 const dots = document.querySelectorAll('.carousel-dots span');
 let currentSlide = 0;
 let intervalId = null;
 
 function showSlide(index) {
-    // 边界检查
-    if (slides.length === 0) return;
-    const idx = (index + slides.length) % slides.length;
-    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
-    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-    currentSlide = idx;
+    // 限制索引范围
+    const total = slides.length;
+    if (total === 0) return;
+    index = ((index % total) + total) % total;
+    
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+    currentSlide = index;
 }
 
 function nextSlide() {
@@ -78,15 +80,14 @@ function startAutoPlay() {
 }
 
 function stopAutoPlay() {
-    if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-    }
+    clearInterval(intervalId);
+    intervalId = null;
 }
 
 // 初始化
 if (slides.length > 0) {
-    // 确保第一张为激活状态
+    // 确保第一张正确显示（如果 HTML 中已有 active，则保持不变）
+    // 但为了保险，强制显示第一张
     showSlide(0);
     startAutoPlay();
 
@@ -99,7 +100,7 @@ if (slides.length > 0) {
         });
     });
 
-    // 左右箭头点击
+    // 左右箭头（使用事件监听，更可靠）
     document.querySelector('.carousel-arrow.left')?.addEventListener('click', () => {
         stopAutoPlay();
         prevSlide();
@@ -112,17 +113,10 @@ if (slides.length > 0) {
     });
 }
 
-// 暴露全局函数供 HTML onclick 调用（保持兼容）
-window.prevSlide = function() {
-    stopAutoPlay();
-    prevSlide();
-    startAutoPlay();
-};
-window.nextSlide = function() {
-    stopAutoPlay();
-    nextSlide();
-    startAutoPlay();
-};
+// 暴露全局函数供 HTML 的 onclick 调用（与内部函数保持一致）
+window.prevSlide = prevSlide;
+window.nextSlide = nextSlide;
+window.showSlide = showSlide; // 可选
 
     // ----- 4. 返回顶部 -----
     const backTop = document.getElementById('backTop');
