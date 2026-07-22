@@ -82,6 +82,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+        // 暴露轮播函数供 HTML onclick 调用
+window.prevSlide = function() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dots span');
+    let current = 0;
+    slides.forEach((s, i) => { if (s.classList.contains('active')) current = i; });
+    const next = (current - 1 + slides.length) % slides.length;
+    slides.forEach((s, i) => s.classList.toggle('active', i === next));
+    dots.forEach((d, i) => d.classList.toggle('active', i === next));
+};
+
+window.nextSlide = function() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dots span');
+    let current = 0;
+    slides.forEach((s, i) => { if (s.classList.contains('active')) current = i; });
+    const next = (current + 1) % slides.length;
+    slides.forEach((s, i) => s.classList.toggle('active', i === next));
+    dots.forEach((d, i) => d.classList.toggle('active', i === next));
+};
+
+
+
+
     // ----- 4. 返回顶部 -----
     const backTop = document.getElementById('backTop');
     if (backTop) {
