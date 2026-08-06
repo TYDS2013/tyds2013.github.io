@@ -278,13 +278,17 @@ async function createAndEdit() {
     postsData.push(newPost);
 
     // 异步上传到 GitHub
-    const jsonContent = JSON.stringify(postsData, null, 4);
-    updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`)
-        .then(() => console.log('元数据上传成功'))
-        .catch(err => console.error('元数据上传失败', err));
-    updateFileOnGitHub(`post/${file}`, defaultContent, `初始化文章 ${title}`)
-        .then(() => console.log('内容上传成功'))
-        .catch(err => console.error('内容上传失败', err));
+    //const jsonContent = JSON.stringify(postsData, null, 4);
+    //updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`)
+    //    .then(() => console.log('元数据上传成功'))
+    //    .catch(err => console.error('元数据上传失败', err));
+    //updateFileOnGitHub(`post/${file}`, defaultContent, `初始化文章 ${title}`)
+    //    .then(() => console.log('内容上传成功'))
+      //  .catch(err => console.error('内容上传失败', err));
+
+    // 在 createAndEdit 中，改为 await 等待上传完成
+    await updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`);
+    await updateFileOnGitHub(`post/${file}`, defaultContent, `初始化文章 ${title}`);
 
     // 跳转到编辑器（URL 带 id）
     window.location.href = `editor.html?id=${newId}`;
