@@ -25,6 +25,10 @@ async function loadArticle() {
         let views = JSON.parse(localStorage.getItem('views') || '{}');
         views[id] = (views[id] || 0) + 1;
         localStorage.setItem('views', JSON.stringify(views));
+        // 触发同步
+        if (typeof queueDataChange === 'function') {
+            queueDataChange('views');
+        }
 
         document.getElementById('articleMeta').innerHTML = `
             <span>${getIcon('date')} ${post.date}</span>
@@ -120,15 +124,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // }
             const now = new Date();
             const timeStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+            // 在评论提交事件中
             articleComments.push({ user, time: timeStr, text });
             comments[id] = articleComments;
             localStorage.setItem('comments', JSON.stringify(comments));
             renderComments(id);
             textInput.value = '';
             alert('评论发布成功！');
-        });
-    }
-});
+            // 触发同步
+            if (typeof queueDataChange === 'function') {
+                queueDataChange('comments');
+            }
+                    });
+                }
+            });
 
 // 暴露函数给其他脚本（如果需要）
 window.updateCommentForm = updateCommentForm;

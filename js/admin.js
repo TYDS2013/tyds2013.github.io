@@ -69,6 +69,11 @@ function saveConfig() {
     githubConfig.branch = branch;
     localStorage.setItem('githubConfig', JSON.stringify(githubConfig));
     showMsg('configMsg', '配置已保存', 'success');
+
+    // 初始化数据同步
+    if (typeof initDataSync === 'function') {
+        initDataSync(githubConfig);
+    }
 }
 
 // =============================================
@@ -113,6 +118,12 @@ async function handleAdminLogin() {
     loadConfig();
     renderUserList();
     updateDashboard();
+
+    // 在登录成功后
+    loadConfig(); // 会加载 githubConfig
+    if (githubConfig.token && githubConfig.repo) {
+        initDataSync(githubConfig);
+    }
 }
 
 function logoutAdmin() {

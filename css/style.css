@@ -310,7 +310,7 @@ a:hover { color: var(--accent-hover); }
 }
 
 
-/* ===== 底部（新布局） ===== */
+/* ===== 底部（新版） ===== */
 .footer {
     margin-top: 50px;
     padding-top: 24px;
@@ -323,20 +323,24 @@ a:hover { color: var(--accent-hover); }
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 20px 40px;
+    align-items: stretch;
+    gap: 20px 30px;
 }
 
-/* 左侧：版权、更新时间、主题切换 */
+/* 左列：纵向排列 */
 .footer-left {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 20px;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 1 auto;
 }
 
 .footer-copyright,
-.footer-update {
+.footer-update,
+.footer-theme {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.9rem;
 }
 
@@ -345,11 +349,35 @@ a:hover { color: var(--accent-hover); }
     opacity: 0.7;
 }
 
-/* 右侧：链接分组 */
+/* 主题开关 */
+.footer-theme {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-theme .theme-label {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+/* 竖线 */
+.footer-divider {
+    width: 1px;
+    background: var(--border-color);
+    flex-shrink: 0;
+    min-height: 60px;
+    align-self: stretch;
+}
+
+/* 右列：链接分组（靠左对齐） */
 .footer-right {
     display: flex;
     flex-wrap: wrap;
-    gap: 40px;
+    gap: 30px;
+    flex: 1 1 auto;
+    justify-content: flex-start;
 }
 
 .footer-group {
@@ -357,7 +385,7 @@ a:hover { color: var(--accent-hover); }
 }
 
 .footer-group-title {
-    font-size: 1.1rem;  /* 稍大 */
+    font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 4px;
     color: var(--text-primary);
@@ -365,7 +393,7 @@ a:hover { color: var(--accent-hover); }
 
 .footer-group-links {
     list-style: none;
-    padding-left: 20px;  /* 缩进 */
+    padding-left: 20px;
     margin: 0;
 }
 
@@ -385,27 +413,39 @@ a:hover { color: var(--accent-hover); }
     text-decoration: none;
 }
 
-/* 移动端适配 */
+/* ===== 手机端适配（上下排列） ===== */
 @media (max-width: 768px) {
     .footer-inner {
         flex-direction: column;
         align-items: center;
-        text-align: center;
+        gap: 16px;
     }
-    .footer-left {
-        justify-content: center;
-    }
+
+    /* 手机端：右列在上，左列在下 */
     .footer-right {
+        order: -1;          /* 链接在上 */
         justify-content: center;
+        width: 100%;
     }
-    .footer-group-links {
-        padding-left: 0;  /* 移动端取消缩进 */
+
+    .footer-left {
+        order: 2;           /* 版权信息在下 */
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .footer-divider {
+        display: none;      /* 竖线隐藏 */
+    }
+
+    .footer-group {
         text-align: center;
     }
-}
-.footer .update-date {
-    font-size: 0.8rem;
-    opacity: 0.7;
+
+    .footer-group-links {
+        padding-left: 0;    /* 移动端取消缩进 */
+    }
 }
 
 /* ===== 字体控制（复用） ===== */

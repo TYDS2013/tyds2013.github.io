@@ -47,19 +47,19 @@
     <!-- 轮播图 -->
     <div class="carousel" id="carousel">
     <div class="carousel-slide active">
-        <img src="img/banner1.png"  onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#ccc';" alt="轮播图1">
+        <img src="img/banner1.png" onerror="this.style.display='none'; this.parentElement.style.background='#ccc';" alt="轮播图1">
         <div class="carousel-caption">双手提笔江山 方块铸造未来——城建一局的小站</div>
     </div>
     <div class="carousel-slide">
-        <img src="img/banner2.png"  onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#ccc';" alt="轮播图1">
+        <img src="img/banner2.png" onerror="this.style.display='none'; this.parentElement.style.background='#ccc';" alt="轮播图2">
         <div class="carousel-caption">翠林城项目</div>
     </div>
     <div class="carousel-slide">
-        <img src="img/banner3.png"  onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#ccc';" alt="轮播图3">
+        <img src="img/banner3.png" onerror="this.style.display='none'; this.parentElement.style.background='#ccc';" alt="轮播图3">
         <div class="carousel-caption">城建与共 生生不息</div>
     </div>
-    <button class="carousel-arrow left" onclick="prevSlide()">‹</button>
-    <button class="carousel-arrow right" onclick="nextSlide()">›</button>
+    <button class="carousel-arrow left" id="prevBtn">‹</button>
+    <button class="carousel-arrow right" id="nextBtn">›</button>
     <div class="carousel-dots">
         <span class="active"></span>
         <span></span>
@@ -88,7 +88,7 @@
     <!-- 底部 -->
 <div class="footer">
     <div class="footer-inner">
-        <!-- 左侧：版权 + 更新时间 + 主题切换 -->
+        <!-- 左列：版权 + 更新时间 + 主题切换（纵向） -->
         <div class="footer-left">
             <div class="footer-copyright">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; color:var(--text-secondary);">
@@ -96,12 +96,12 @@
                     <circle cx="12" cy="12" r="9" />
                     <path d="M14.5 9a3.5 4 0 1 0 0 6" />
                 </svg>
-                 2026 城建一局
+                <span>2026 城建一局</span>
             </div>
             <div class="footer-update">
                 最后更新：<span id="updateDate"></span>
             </div>
-            <div class="theme-switch-wrapper">
+            <div class="footer-theme">
                 <span class="theme-label" data-theme-icon="sun">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="5"/>
@@ -116,28 +116,29 @@
                     </svg>
                 </span>
                 <label class="theme-switch">
-                <input type="checkbox" id="themeToggleCheckbox">
-                <span class="slider"></span>
+                    <input type="checkbox" id="themeToggleCheckbox">
+                    <span class="slider"></span>
                 </label>
-                <span class="theme-label" data-theme-icon="moon"> 
+                <span class="theme-label" data-theme-icon="moon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
                 </span>
             </div>
-       
+        </div>
 
-        <!-- 右侧：链接分组 -->
+        <!-- 竖线分隔（仅电脑端显示） -->
+        <div class="footer-divider"></div>
+
+        <!-- 右列：链接分组（靠竖线放置） -->
         <div class="footer-right">
             <div class="footer-group">
                 <div class="footer-group-title">翠林城</div>
                 <ul class="footer-group-links">
-                    <li><a href="https://cjyg.top/clcity" target="_blank">翠林城项目中心</a></li>
+                    <li><a href="https://cjyj.top/clcity" target="_blank">翠林城项目中心</a></li>
                     <li><a href="clcity-map/index.html" target="_blank">地图</a></li>
-                    <!-- 未来可在此添加更多子链接，如“建筑”、“路线”等 -->
                 </ul>
             </div>
-            <!-- 可添加更多分组，如“社区”、“帮助”等 -->
         </div>
     </div>
 </div>

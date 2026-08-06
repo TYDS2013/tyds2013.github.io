@@ -56,12 +56,20 @@ let currentSlide = 0;
 let intervalId = null;
 
 function showSlide(index) {
-    // 限制索引范围
     const total = slides.length;
     if (total === 0) return;
     index = ((index % total) + total) % total;
     
-    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    slides.forEach((s, i) => {
+        s.classList.toggle('active', i === index);
+        // 对于当前 slide，确保图片加载（如果之前未加载）
+        if (i === index) {
+            const img = s.querySelector('img');
+            if (img && img.dataset.src && !img.src) {
+                img.src = img.dataset.src;
+            }
+        }
+    });
     dots.forEach((d, i) => d.classList.toggle('active', i === index));
     currentSlide = index;
 }
@@ -86,12 +94,9 @@ function stopAutoPlay() {
 
 // 初始化
 if (slides.length > 0) {
-    // 确保第一张正确显示（如果 HTML 中已有 active，则保持不变）
-    // 但为了保险，强制显示第一张
     showSlide(0);
     startAutoPlay();
 
-    // 圆点点击
     dots.forEach((dot, i) => {
         dot.addEventListener('click', () => {
             stopAutoPlay();
@@ -100,23 +105,28 @@ if (slides.length > 0) {
         });
     });
 
-    // 左右箭头（使用事件监听，更可靠）
-    document.querySelector('.carousel-arrow.left')?.addEventListener('click', () => {
-        stopAutoPlay();
-        prevSlide();
-        startAutoPlay();
-    });
-    document.querySelector('.carousel-arrow.right')?.addEventListener('click', () => {
-        stopAutoPlay();
-        nextSlide();
-        startAutoPlay();
-    });
+    // 使用 ID 或更精确的选择器
+    const leftArrow = document.getElementById('prevBtn') || document.querySelector('.carousel-arrow.left');
+    const rightArrow = document.getElementById('nextBtn') || document.querySelector('.carousel-arrow.right');
+    if (leftArrow) {
+        leftArrow.addEventListener('click', () => {
+            stopAutoPlay();
+            prevSlide();   // 左箭头显示上一张
+            startAutoPlay();
+        });
+    }
+    if (rightArrow) {
+        rightArrow.addEventListener('click', () => {
+            stopAutoPlay();
+            nextSlide();   // 右箭头显示下一张
+            startAutoPlay();
+        });
+    }
 }
 
-// 暴露全局函数供 HTML 的 onclick 调用（与内部函数保持一致）
+// 暴露全局函数（供其他脚本调用，但不再依赖 onclick）
 window.prevSlide = prevSlide;
 window.nextSlide = nextSlide;
-window.showSlide = showSlide; // 可选
 
     // ----- 4. 返回顶部 -----
     const backTop = document.getElementById('backTop');
@@ -274,3 +284,211 @@ function getIcon(name) {
     return icons[name] || '';
 }
 window.getIcon = getIcon; // 暴露到全局
+
+
+
+// =============================================
+// 数据同步（GitHub API）—— 仅当管理员配置 Token 后启用
+// =============================================
+
+const DATA_FILE_PATH = 'data/site-data.json';
+
+const dataSync = {
+    config: null,          // { token, repo, branch }
+    sha: null,             // 当前文件的 SHA
+    changes: new Set(),    // 待同步的数据类型（'views','comments','likes','favorites'）
+    timeout: null,         // 延迟提交定时器
+    updating: false,       // 是否正在提交
+    retryCount: 0,
+    maxRetries: 3,
+};
+
+// ----- 本地数据读写 -----
+function getLocalData() {
+    return {
+        views: JSON.parse(localStorage.getItem('views') || '{}'),
+        comments: JSON.parse(localStorage.getItem('comments') || '{}'),
+        likes: JSON.parse(localStorage.getItem('likes') || '{}'),
+        favorites: JSON.parse(localStorage.getItem('favorites') || '{}'),
+    };
+}
+
+function saveLocalData(data) {
+    if (data.views) localStorage.setItem('views', JSON.stringify(data.views));
+    if (data.comments) localStorage.setItem('comments', JSON.stringify(data.comments));
+    if (data.likes) localStorage.setItem('likes', JSON.stringify(data.likes));
+    if (data.favorites) localStorage.setItem('favorites', JSON.stringify(data.favorites));
+}
+
+// ----- 从 GitHub 拉取并合并到本地 -----
+async function loadRemoteData() {
+    if (!dataSync.config?.token) return false;
+    const url = `https://api.github.com/repos/${dataSync.config.repo}/contents/${DATA_FILE_PATH}?ref=${dataSync.config.branch}`;
+    try {
+        const res = await fetch(url, {
+            headers: { 'Authorization': `token ${dataSync.config.token}` }
+        });
+        if (res.ok) {
+            const file = await res.json();
+            dataSync.sha = file.sha;
+            const content = atob(file.content);
+            const remote = JSON.parse(content);
+            const local = getLocalData();
+
+            // 合并 views（取最大值）
+            for (const key in remote.views) {
+                local.views[key] = Math.max(local.views[key] || 0, remote.views[key]);
+            }
+            // 合并 comments（按 user+time 去重）
+            for (const key in remote.comments) {
+                if (!local.comments[key]) local.comments[key] = [];
+                const existing = new Set(local.comments[key].map(c => c.user + c.time));
+                remote.comments[key].forEach(c => {
+                    if (!existing.has(c.user + c.time)) {
+                        local.comments[key].push(c);
+                    }
+                });
+            }
+            // 合并 likes & favorites（取或）
+            for (const key in remote.likes) {
+                local.likes[key] = local.likes[key] || remote.likes[key] || false;
+            }
+            for (const key in remote.favorites) {
+                local.favorites[key] = local.favorites[key] || remote.favorites[key] || false;
+            }
+
+            saveLocalData(local);
+            return true;
+        } else if (res.status === 404) {
+            // 文件不存在，创建空文件（之后首次提交会自动创建）
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('加载远程数据失败', e);
+        return false;
+    }
+}
+
+// ----- 提交数据到 GitHub（带冲突重试） -----
+async function pushRemoteData(data, retry = true) {
+    if (!dataSync.config?.token) return false;
+    const url = `https://api.github.com/repos/${dataSync.config.repo}/contents/${DATA_FILE_PATH}`;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const payload = {
+        message: '更新站点数据',
+        content: content,
+        branch: dataSync.config.branch,
+    };
+    if (dataSync.sha) payload.sha = dataSync.sha;
+
+    try {
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${dataSync.config.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            const result = await res.json();
+            dataSync.sha = result.content.sha;
+            return true;
+        } else if (res.status === 409 && retry) {
+            // 冲突：远程已有新提交，获取最新版本并重新合并
+            const getRes = await fetch(url, {
+                headers: { 'Authorization': `token ${dataSync.config.token}` }
+            });
+            if (getRes.ok) {
+                const file = await getRes.json();
+                dataSync.sha = file.sha;
+                const remoteContent = atob(file.content);
+                const remoteData = JSON.parse(remoteContent);
+                const localData = getLocalData();
+                // 重新合并远程和本地（保留两者的最新数据）
+                // 合并逻辑与 loadRemoteData 类似，但以远程为基准，并插入本地新增
+                // 由于本地数据可能已包含用户操作，我们以本地为准，但远程新增的不能丢失
+                // 简单策略：合并时，远程已有的 key 保留，本地新增的也保留
+                // 对于数组（评论），去重合并
+                const merged = {
+                    views: { ...remoteData.views, ...localData.views },
+                    comments: { ...remoteData.comments, ...localData.comments },
+                    likes: { ...remoteData.likes, ...localData.likes },
+                    favorites: { ...remoteData.favorites, ...localData.favorites },
+                };
+                // 对 comments 做去重（防止同一评论重复）
+                for (const key in merged.comments) {
+                    const arr = merged.comments[key];
+                    if (arr && arr.length > 0) {
+                        const seen = new Set();
+                        merged.comments[key] = arr.filter(c => {
+                            const id = c.user + c.time;
+                            if (seen.has(id)) return false;
+                            seen.add(id);
+                            return true;
+                        });
+                    }
+                }
+                saveLocalData(merged);
+                // 重试提交（只重试一次，防止死循环）
+                return await pushRemoteData(merged, false);
+            }
+            return false;
+        } else {
+            return false;
+        }
+    } catch (e) {
+        console.warn('推送数据失败', e);
+        return false;
+    }
+}
+
+// ----- 同步主函数（节流） -----
+async function syncDataToRemote() {
+    if (dataSync.updating) return;
+    dataSync.updating = true;
+    try {
+        const localData = getLocalData();
+        const success = await pushRemoteData(localData);
+        if (success) {
+            dataSync.changes.clear();
+        }
+    } finally {
+        dataSync.updating = false;
+    }
+}
+
+// ----- 队列变更（延迟提交） -----
+function queueDataChange(type) {
+    if (!dataSync.config?.token) return;
+    dataSync.changes.add(type);
+    if (dataSync.timeout) clearTimeout(dataSync.timeout);
+    dataSync.timeout = setTimeout(() => {
+        syncDataToRemote();
+    }, 5000); // 5秒内多次变更合并为一次提交
+}
+
+// ----- 初始化数据同步（由 admin.js 调用） -----
+async function initDataSync(config) {
+    dataSync.config = config;
+    if (config?.token && config?.repo) {
+        await loadRemoteData();
+        // 页面关闭前尝试最后一次提交（但 beforeunload 中异步操作可能失败）
+        window.addEventListener('beforeunload', () => {
+            if (dataSync.changes.size > 0) {
+                // 使用 navigator.sendBeacon 方式（需将数据转换为 Blob），这里简化，放弃同步
+                // 实际可考虑使用 sendBeacon 发送数据到自定义后端，但无后端则忽略
+            }
+        });
+    }
+}
+
+// 暴露全局
+window.getLocalData = getLocalData;
+window.saveLocalData = saveLocalData;
+window.loadRemoteData = loadRemoteData;
+window.pushRemoteData = pushRemoteData;
+window.syncDataToRemote = syncDataToRemote;
+window.queueDataChange = queueDataChange;
+window.initDataSync = initDataSync;
