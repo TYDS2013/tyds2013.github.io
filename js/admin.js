@@ -244,6 +244,8 @@ function renderPostList() {
 // 7. 新建文章（先保存本地，再异步上传）
 // =============================================
 async function createAndEdit() {
+    console.log('[createAndEdit] 开始执行');
+
     const title = document.getElementById('newTitle').value.trim();
     const date = document.getElementById('newDate').value.trim() || new Date().toISOString().slice(0,10);
     const category = document.getElementById('newCategory').value;
@@ -253,10 +255,23 @@ async function createAndEdit() {
         return;
     }
 
+    // 确保 postsData 已初始化
+    if (!postsData || !Array.isArray(postsData) || postsData.length === 0) {
+        try {
+            const res = await fetch('post/posts.json?' + Date.now());
+            postsData = await res.json();
+            console.log('[createAndEdit] postsData 重新加载成功', postsData);
+        } catch(e) {
+            console.error('[createAndEdit] 加载 posts.json 失败', e);
+            showMsg('newPostMsg', '加载文章列表失败，请刷新后重试', 'error');
+            return;
+        }
+    }
+
     const adminUser = sessionStorage.getItem('loginUser') || '管理员';
     const maxId = postsData.reduce((max, p) => Math.max(max, p.id), 0);
     const newId = maxId + 1;
-    const file = newId + '.md'; // 确保文件名字符串
+    const file = newId + '.md';
     const defaultContent = '# ' + title + '\n\n开始书写...';
 
     const newPost = {
@@ -266,31 +281,32 @@ async function createAndEdit() {
         category: category || 'uncategorized',
         excerpt: '',
         tags: [],
-        file: file, // 明确赋值
+        file: file,
         author: adminUser
     };
 
-    // 保存到本地缓存（含 file）
+    // 1. 先保存到本地 localStorage（含 file）
     localStorage.setItem('newPost_' + newId, JSON.stringify(newPost));
     localStorage.setItem('newPostContent_' + newId, defaultContent);
 
-    // 更新内存
+    // 2. 更新内存中的 postsData
     postsData.push(newPost);
 
-    // 异步上传到 GitHub
-    //const jsonContent = JSON.stringify(postsData, null, 4);
-    //updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`)
-    //    .then(() => console.log('元数据上传成功'))
-    //    .catch(err => console.error('元数据上传失败', err));
-    //updateFileOnGitHub(`post/${file}`, defaultContent, `初始化文章 ${title}`)
-    //    .then(() => console.log('内容上传成功'))
-      //  .catch(err => console.error('内容上传失败', err));
+    // 3. 生成 JSON 内容（必须定义！）
+    const jsonContent = JSON.stringify(postsData, null, 4);
 
-    // 在 createAndEdit 中，改为 await 等待上传完成
-    await updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`);
-    await updateFileOnGitHub(`post/${file}`, defaultContent, `初始化文章 ${title}`);
+    // 4. 异步上传到 GitHub（使用 await 确保完成后再跳转）
+    try {
+        await updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`);
+        await updateFileOnGitHub(`post/${file}`, defaultContent, `初始化文章 ${title}`);
+        console.log('[createAndEdit] 上传成功');
+    } catch(err) {
+        console.error('[createAndEdit] 上传失败', err);
+        showMsg('newPostMsg', '上传失败：' + err.message, 'error');
+        return;
+    }
 
-    // 跳转到编辑器（URL 带 id）
+    // 5. 跳转到编辑器
     window.location.href = `editor.html?id=${newId}`;
 }
 
