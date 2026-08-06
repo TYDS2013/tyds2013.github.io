@@ -50,83 +50,78 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 // ----- 3. 轮播图 -----
-const slides = document.querySelectorAll('.carousel-slide');
-const dots = document.querySelectorAll('.carousel-dots span');
-let currentSlide = 0;
-let intervalId = null;
+(function() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dots span');
+    let currentSlide = 0;
+    let intervalId = null;
 
-function showSlide(index) {
-    const total = slides.length;
-    if (total === 0) return;
-    index = ((index % total) + total) % total;
-    
-    slides.forEach((s, i) => {
-        s.classList.toggle('active', i === index);
-        // 对于当前 slide，确保图片加载（如果之前未加载）
-        if (i === index) {
-            const img = s.querySelector('img');
-            if (img && img.dataset.src && !img.src) {
-                img.src = img.dataset.src;
-            }
-        }
-    });
-    dots.forEach((d, i) => d.classList.toggle('active', i === index));
-    currentSlide = index;
-}
+    if (slides.length === 0) return;
 
-function nextSlide() {
-    showSlide(currentSlide + 1);
-}
+    function showSlide(index) {
+        const total = slides.length;
+        index = ((index % total) + total) % total;
+        slides.forEach((s, i) => {
+            s.classList.toggle('active', i === index);
+        });
+        dots.forEach((d, i) => {
+            d.classList.toggle('active', i === index);
+        });
+        currentSlide = index;
+        console.log('当前显示 slide:', index);
+    }
 
-function prevSlide() {
-    showSlide(currentSlide - 1);
-}
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
 
-function startAutoPlay() {
-    if (intervalId) clearInterval(intervalId);
-    intervalId = setInterval(nextSlide, 5000);
-}
+    function prevSlide() {
+        showSlide(currentSlide - 1);
+    }
 
-function stopAutoPlay() {
-    clearInterval(intervalId);
-    intervalId = null;
-}
+    function startAutoPlay() {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(nextSlide, 5000);
+    }
 
-// 初始化
-if (slides.length > 0) {
+    function stopAutoPlay() {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+
     showSlide(0);
     startAutoPlay();
 
     dots.forEach((dot, i) => {
-        dot.addEventListener('click', () => {
+        dot.addEventListener('click', function() {
             stopAutoPlay();
             showSlide(i);
             startAutoPlay();
         });
     });
 
-    // 使用 ID 或更精确的选择器
     const leftArrow = document.getElementById('prevBtn') || document.querySelector('.carousel-arrow.left');
     const rightArrow = document.getElementById('nextBtn') || document.querySelector('.carousel-arrow.right');
+
     if (leftArrow) {
-        leftArrow.addEventListener('click', () => {
+        leftArrow.addEventListener('click', function() {
             stopAutoPlay();
-            prevSlide();   // 左箭头显示上一张
+            prevSlide();
             startAutoPlay();
         });
     }
     if (rightArrow) {
-        rightArrow.addEventListener('click', () => {
+        rightArrow.addEventListener('click', function() {
             stopAutoPlay();
-            nextSlide();   // 右箭头显示下一张
+            nextSlide();
             startAutoPlay();
         });
     }
-}
 
-// 暴露全局函数（供其他脚本调用，但不再依赖 onclick）
-window.prevSlide = prevSlide;
-window.nextSlide = nextSlide;
+    window.prevSlide = prevSlide;
+    window.nextSlide = nextSlide;
+    window.showSlide = showSlide;
+})();
 
     // ----- 4. 返回顶部 -----
     const backTop = document.getElementById('backTop');

@@ -445,6 +445,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         loadConfig();
         renderUserList();
         updateDashboard();
+
+        // ---- 加载分类（需等待 GitHub 配置已加载） ----
+        if (githubConfig.token && githubConfig.repo) {
+            const categories = await loadCategoriesFromGitHub();
+            populateCategorySelect(categories);
+        }
     }
 
     const loginBtn = document.getElementById('adminLoginBtn');
@@ -460,3 +466,141 @@ window.saveConfig = saveConfig;
 window.createAndEdit = createAndEdit;
 window.addNewTag = addNewTag;
 window.deletePost = deletePost;
+
+
+// =============================================
+// 11. 分类云端管理
+// =============================================
+
+const CATEGORIES_FILE = 'data/categories.json';
+
+/**
+ * 从 GitHub 加载分类列表
+ */
+async function loadCategoriesFromGitHub() {
+    if (!githubConfig.token || !githubConfig.repo) {
+        console.warn('GitHub 未配置，使用默认分类');
+        return ['uncategorized'];
+    }
+    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/${CATEGORIES_FILE}?ref=${githubConfig.branch}`;
+    try {
+        const res = await fetch(url, {
+            headers: { 'Authorization': `token ${githubConfig.token}` }
+        });
+        if (res.ok) {
+            const file = await res.json();
+            const content = atob(file.content);
+            return JSON.parse(content);
+        } else if (res.status === 404) {
+            // 文件不存在，创建默认分类并上传
+            const defaultCategories = ['uncategorized'];
+            await saveCategoriesToGitHub(defaultCategories);
+            return defaultCategories;
+        } else {
+            console.error('加载分类失败', await res.text());
+            return ['uncategorized'];
+        }
+    } catch(e) {
+        console.error('加载分类异常', e);
+        return ['uncategorized'];
+    }
+}
+
+/**
+ * 保存分类列表到 GitHub（带冲突处理）
+ */
+async function saveCategoriesToGitHub(categories) {
+    if (!githubConfig.token || !githubConfig.repo) {
+        throw new Error('GitHub 未配置');
+    }
+    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/${CATEGORIES_FILE}`;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(categories, null, 2))));
+    let sha = null;
+    try {
+        const getRes = await fetch(url, {
+            headers: { 'Authorization': `token ${githubConfig.token}` }
+        });
+        if (getRes.ok) {
+            const file = await getRes.json();
+            sha = file.sha;
+        } else if (getRes.status !== 404) {
+            const err = await getRes.json();
+            throw new Error(err.message || '获取分类文件信息失败');
+        }
+    } catch(e) {
+        if (!e.message.includes('404')) throw e;
+    }
+
+    const payload = {
+        message: '更新分类列表',
+        content: content,
+        branch: githubConfig.branch,
+    };
+    if (sha) payload.sha = sha;
+
+    const putRes = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `token ${githubConfig.token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    });
+    if (!putRes.ok) {
+        const err = await putRes.json();
+        throw new Error(err.message || '保存分类失败');
+    }
+    return await putRes.json();
+}
+
+/**
+ * 填充下拉框（从 GitHub 加载后调用）
+ */
+function populateCategorySelect(categories) {
+    const select = document.getElementById('newCategory');
+    if (!select) return;
+    // 清空现有选项（保留第一个“未分类”占位）
+    select.innerHTML = '';
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+    });
+    // 如果有未分类，默认选中第一个
+    if (categories.length > 0) select.value = categories[0];
+}
+
+/**
+ * 添加新分类（云端同步）
+ */
+async function addNewTag() {
+    const input = document.getElementById('newTagInput');
+    const tag = input.value.trim();
+    if (!tag) {
+        showMsg('newPostMsg', '请输入标签名称', 'error');
+        return;
+    }
+
+    try {
+        // 1. 从 GitHub 获取最新分类列表
+        let categories = await loadCategoriesFromGitHub();
+        // 2. 检查是否已存在
+        if (categories.includes(tag)) {
+            alert('标签已存在');
+            return;
+        }
+        // 3. 追加新标签
+        categories.push(tag);
+        // 4. 保存到 GitHub
+        await saveCategoriesToGitHub(categories);
+        // 5. 更新下拉框
+        populateCategorySelect(categories);
+        // 6. 清空输入框
+        input.value = '';
+        showMsg('newPostMsg', `标签 "${tag}" 已添加`, 'success');
+    } catch(err) {
+        console.error('添加标签失败', err);
+        showMsg('newPostMsg', '添加标签失败：' + err.message, 'error');
+    }
+}
