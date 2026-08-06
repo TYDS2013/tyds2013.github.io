@@ -256,7 +256,7 @@ async function createAndEdit() {
     const adminUser = sessionStorage.getItem('loginUser') || '管理员';
     const maxId = postsData.reduce((max, p) => Math.max(max, p.id), 0);
     const newId = maxId + 1;
-    const file = newId + '.md';
+    const file = newId + '.md'; // 确保文件名字符串
     const defaultContent = '# ' + title + '\n\n开始书写...';
 
     const newPost = {
@@ -266,18 +266,18 @@ async function createAndEdit() {
         category: category || 'uncategorized',
         excerpt: '',
         tags: [],
-        file,
+        file: file, // 明确赋值
         author: adminUser
     };
 
-    // 1. 先保存到本地 localStorage
+    // 保存到本地缓存（含 file）
     localStorage.setItem('newPost_' + newId, JSON.stringify(newPost));
     localStorage.setItem('newPostContent_' + newId, defaultContent);
 
-    // 2. 更新内存中的 postsData
+    // 更新内存
     postsData.push(newPost);
 
-    // 3. 异步上传到 GitHub（不等待，立即跳转）
+    // 异步上传到 GitHub
     const jsonContent = JSON.stringify(postsData, null, 4);
     updateFileOnGitHub('post/posts.json', jsonContent, `新建文章: ${title}`)
         .then(() => console.log('元数据上传成功'))
@@ -286,7 +286,7 @@ async function createAndEdit() {
         .then(() => console.log('内容上传成功'))
         .catch(err => console.error('内容上传失败', err));
 
-    // 4. 立即跳转到编辑器
+    // 跳转到编辑器（URL 带 id）
     window.location.href = `editor.html?id=${newId}`;
 }
 

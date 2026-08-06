@@ -42,8 +42,16 @@ async function loadEditor() {
         const posts = await res.json();
         const post = posts.find(p => p.id == id);
         if (post) {
+            // 确保 file 不为空
+            let file = post.file;
+            if (!file || file === 'null' || file === 'undefined') {
+                file = id + '.md';
+                // 修复内存中的 postsData（但这里无法直接修改）
+                // 可向用户提示
+                console.warn('文章 file 字段缺失，使用默认文件名', file);
+            }
+            currentFile = file;
             await loadPostData(post);
-            // 清除本地缓存（已同步）
             localStorage.removeItem('newPost_' + id);
             localStorage.removeItem('newPostContent_' + id);
             return;
@@ -52,11 +60,17 @@ async function loadEditor() {
         console.warn('网络加载失败，尝试本地缓存', e);
     }
 
-    // 网络未找到，检查本地缓存
+    // 检查本地缓存
     const localPost = localStorage.getItem('newPost_' + id);
     const localContent = localStorage.getItem('newPostContent_' + id);
     if (localPost && localContent) {
         const post = JSON.parse(localPost);
+        // 确保 file 字段存在
+        if (!post.file || post.file === 'null' || post.file === 'undefined') {
+            post.file = id + '.md';
+            localStorage.setItem('newPost_' + id, JSON.stringify(post));
+        }
+        currentFile = post.file;
         isUsingLocal = true;
         document.getElementById('editorTitle').textContent = `📝 编辑：${post.title} (本地缓存)`;
         document.getElementById('editorContent').value = localContent;
@@ -83,6 +97,21 @@ async function loadEditor() {
     // 都没有，报错
     document.getElementById('editorTitle').textContent = '❌ 文章未找到';
     showMsg('editorMsg', '❌ 无法加载文章，请检查网络或重新创建', 'error');
+
+
+    
+    let file = post.file;
+    if (!file || file === 'null' || file === 'undefined') {
+    file = id + '.md';
+    // 可选：更新本地缓存中的 file 字段
+    const localPost = localStorage.getItem('newPost_' + id);
+    if (localPost) {
+        const p = JSON.parse(localPost);
+        p.file = file;
+        localStorage.setItem('newPost_' + id, JSON.stringify(p));
+    }
+}
+currentFile = file;
 }
 
 /** 从网络加载文章数据 */
